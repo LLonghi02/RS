@@ -1,0 +1,201 @@
+%%%% ijcai20-multiauthor.tex
+
+\typeout{IJCAI--PRICAI--20 Multiple authors example}
+
+% These are the instructions for authors for IJCAI-20.
+
+\documentclass[a4paper]{article}
+\pdfpagewidth=8.5in
+\pdfpageheight=11in
+% The file ijcai20.sty is NOT the same than previous years'
+\usepackage{ijcai20}
+\usepackage{float}
+
+% Use the postscript times font!
+\usepackage{times}
+\renewcommand*\ttdefault{txtt}
+\usepackage{soul}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[small]{caption}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\urlstyle{same}
+
+
+
+
+\usepackage{xcolor}
+\usepackage{multirow}
+\newcommand{\todo}[1]{\textcolor{red}{\textit{[Fill this: #1]}}}
+\newcommand{\checklist}[1]{\textcolor{blue}{\textbf{[Check this: #1]}}}
+
+
+%%%%%%%%%%%% PYTHON LISTINGS
+
+\usepackage{color}
+\usepackage{listings}
+% \usepackage{setspace}
+
+% Python style for highlighting
+\newcommand\pythonstyle{\lstset{
+language=Python,
+basicstyle=\ttm,
+otherkeywords={self},             % Add keywords here
+keywordstyle=\ttb\color{deepblue},
+emph={MyClass,__init__},          % Custom highlighting
+emphstyle=\ttb\color{deepred},    % Custom highlighting style
+stringstyle=\color{deepgreen},
+frame=tb,                         % Any extra options here
+showstringspaces=false            % 
+}}
+
+
+% Python environment
+\lstnewenvironment{python}[1][]
+{
+\pythonstyle
+\lstset{#1}
+}
+{}
+
+% Python for external files
+\newcommand\pythonexternal[2][]{{
+\pythonstyle
+\lstinputlisting[#1]{#2}}}
+
+% Python for inline
+\newcommand\pythoninline[1]{{\pythonstyle\lstinline!#1!}}
+
+%%%%%%%%%%%%%
+
+
+
+% the following package is optional:
+%\usepackage{latexsym} 
+
+% Following comment is from ijcai97-submit.tex:
+% The preparation of these files was supported by Schlumberger Palo Alto
+% Research, AT\&T Bell Laboratories, and Morgan Kaufmann Publishers.
+% Shirley Jowell, of Morgan Kaufmann Publishers, and Peter F.
+% Patel-Schneider, of AT\&T Bell Laboratories collaborated on their
+% preparation.
+
+% These instructions can be modified and used in other conferences as long
+% as credit to the authors and supporting agencies is retained, this notice
+% is not changed, and further modification or reuse is not restricted.
+% Neither Shirley Jowell nor Peter F. Patel-Schneider can be listed as
+% contacts for providing assistance without their prior permission.
+
+% To use for other conferences, change references to files and the
+% conference appropriate and use other authors, contacts, publishers, and
+% organizations.
+% Also change the deadline and address for returning papers and the length and
+% page charge instructions.
+% Put where the files are available in the appropriate places.
+
+\title{Recommender Systems Course, Algorithm Porting Project A.Y. 2024-25\footnote{This is an internal document of the assignments for the Recommender Systems Course at Politecnico di Milano, and should not be distributed or shared for purposes other than this course activities.}}
+
+\author{
+Team Member 1$^1$\and
+Team Member 2$^1$\\
+\affiliations
+$^1$Politecnico di Milano, Student\\
+\emails
+todo@mail.polimi.it
+}
+
+\begin{document}
+
+\maketitle
+
+% \begin{abstract}
+% This document contains the guidelines you should follow for your project and the template of the report you are required to present.
+% \end{abstract}
+
+\section{Project purpose}
+
+The purpose of this project is the porting of recently published Recommender Systems algorithms in a standard framework we use.
+Reasonable programming skills in Python are required. 
+The project will require to obtain the original implementation provided by the authors of the selected articles, then to write a \emph{Wrapper} class around it in in order for it to be compatible with the BaseRecommender interface and reproduce the original experimental results. Each team of two will be assigned two or three algorithms, if an algorithm cannot be successfully ported another one may be assigned to replace it depending on the amount of work previously done.
+This document contains the relevant documentation and examples.
+
+
+
+\subsection{Delivery requirements}
+The delivery of this project will consist of a zip file whose name must be \emph{"TeamMember1 TeamMember2.zip"} containing:
+\begin{itemize}
+    \item A \emph{team members.txt} file with the name, surname, matricola, PoliMi email of the two team members
+    \item A \emph{[algorithm\_name]\_github} folder containing the clone of the original repository provided by the authors
+    \item A \emph{[algorithm\_name]\_our\_interface} folder containing the recommender wrapper plus all other scripts necessary and a subfolder for each dataset with the corresponding data reader
+    \item A \emph{[algorithm\_name]\_Report.pdf} file for each algorithm using the template provided in Section \ref{sec:report_template}.
+\end{itemize}
+
+\subsection{Source code requirements}
+The project involves writing both a Wrapper around the original model as well as a \emph{DataReader} object for each of the datasets used in the experiments. The two should allow to run the experimental pipeline an example of which is in the provided source code (\emph{run\_CIKM\_18\_ExampleAlgorithm.py}).
+As a general criteria, whenever the original source contains a function that already does something you need (model instantiation, data parsing...), do not re-write it or copy it, but rather call that function. If necessary applying some pre and post processing to adapt the data input or output. If the function requires small changes, for example due to the different format of the input data, copy it and alter it as needed. You should \emph{copy, move or modify the least amount possible of the original code}, ideally almost no changes should be made and the Wrapper should operate by calling the original functions.\footnote{If the model is implemented in tensorflow, pytorch or keras you likely will be able to import the original model into a rather simple Recommender class (see an example in Recommenders/MatrixFactorization/PyTorchMF.py).} \footnote{Sometimes the authors provide multiple "official" implementations, prefer those written in pytorch to those in tensorflow because they are simpler and more flexible. Check with the teaching assistant.} The code you write or modify will be thoroughly checked and compared to the original implementation, due to the \textbf{very delicate} nature of this type of work. In the DataReader the original reading functions should be used and then the data transformed into a sparse URM and/or ICM matrices. 
+In a typical scenario you have that the DataReader uses the original reading function that creates the data structure the model needs, but you will also need to transform the data into a sparse matrix to ensure compatibility with the framework. If the model requires as input a different data structure you have two scenarios: (1) if the model uses simple data structures your wrapper must take as input only the sparse URM/ICM and any data conversion must be hidden within the wrapper, (2) if the model uses very complex data structures, for example graphs that use content-based entities which cannot be reconstructed easily from the sparse URM/ICM, you can write the wrapper so that it requires both the sparse (for framework compatibility) and model-specific (for simplicity of porting) formats but the two formats must be consistent.
+
+\paragraph{Validation and test data} The ported source code must not be provided with the validation or test data in any way (for example, in the constructor). If the original source code takes as input the test data this may mean it is used during the training process, which could invalidate the results reported in the paper. Instead of providing the real test/validation matrices, set them to None. If you see errors are raised check where the data is being used. If it is used actively during the train process, contact the teaching assistant via email. Otherwise, just comment-out the code in question, but do not delete it. 
+
+\paragraph{Evaluation}  Often the original source code evaluates the model during the training phase, the ported version will decouple the training and evaluation phases so that the evaluation will be done by the Evaluator object in the framework that will rely on the \_compute\_item\_score function of the ported recommender. You can comment-out the parts of the original implementation that evaluate during training.
+%If the model requires the data in a format other than a sparse matrix, a function that translates the sparse matrix into the required data structure should be written. 
+
+Overall, the source code will need to meet the following requirements:
+\label{sec:source_code_requirements}
+\begin{itemize} 
+    \item You should provide an implementation of the methods described in Appendix \ref{sec:source_documentation_BaseRecommender}, \ref{sec:source_documentation_EarlyStopping} and \ref{sec:source_documentation_DataReader} but not the BaseTempFolder class described in \ref{sec:source_documentation_BaseTempFolder}.
+    \item The code should meet the interface specifications as per Appendix \ref{sec:source_documentation_BaseRecommender}, \ref{sec:source_documentation_EarlyStopping}, \ref{sec:source_documentation_BaseTempFolder} and \ref{sec:source_documentation_DataReader} and should pass the tests done in script \emph{Test\_BaseRecommender.py}.
+    \item The code should be consistent with the example provided and meet the previous requirements.
+    % \item If the model needs to save a temporary file, the Wrapper class must inherit from the BaseTempFolder and use those functions to handle the temp folder
+    % \item If the model requires a Saver object from Tensorflow/Keras/... , the \emph{Saver} object must be instantiated and used only within the load and save functions.
+\end{itemize}
+
+\subsection{Report requirements}
+Section \ref{sec:report_template} contains the template for the report, you should write one per algorithm. There are to types of notes:
+\begin{itemize}
+    \item \todo{something}: Replace them providing the required information and description
+    \item \checklist{Yes/No}: Answer the question choosing one of the options. Sometimes it may be required to provide additional information according to the answer. Leave the answer in the blue/bold format.
+\end{itemize}    
+
+
+\subsection{Project Evaluation criteria}
+The project will be considered successful if the following conditions are met:
+\begin{itemize}
+    \item The DataReader and Wrapper implementations can be understood with reasonable effort and are consistent with the interface and the requirements. The original implementation has not been altered in substantial ways.
+    \item The Wrapper model can be saved and loaded, what should be saved is the model itself, not the predictions.
+    \item The Wrapper implementation passes the tests provided in script \emph{Test/run\_unittest\_recommenders.py}.
+    \item The DataReader and Wrapper implementation allows to achieve results consistent with the ones reported in the original article, provided that the original implementation allows to do the same.
+    \item The report is complete, truthful and consistent with the other material provided
+    \item The deadline has been met
+\end{itemize}
+
+ 
+\subsection{Some annoying problems you may encounter}
+
+\begin{itemize}
+    \item On Windows when you pass the parameters to the Keras/Tensorflow model you may get the exception \emph{Unsupported feed type}. Check if in the input data you have a numpy array with integer values, if so add ".astype(np.int32)".
+    \item Sometimes you need to save sessions or other complex objects native of Keras or Tensorflow. You can save them in a subfolder and then compress it, in order to put all the components of a model in a single compressed file (an example is in the Neural/MultVAERecommender file). Alternatively, if you can extract arrays of weights or other parameters, you can put them in a dictionary and save them with the provided DataIO class, then you can re-create the original data structure when you do the loading. Sometimes saving/loading the state of a model is tricky and may produce erroneous results, make sure to check the loaded version is consistent with the saved one.
+    \item When you use a Saver to save the state of a tensorflow model during training, be careful because the Saver also deletes old files. For this reason we recommend that a new Saver object is created when you do a load/save operation in the load\_model and save\_model functions to avoid accidentally removing files.
+\end{itemize}
+
+
+
+
+
+
+\clearpage
+\input{article_report.tex}
+\clearpage
+\appendix
+\input{source_documentation.tex}
+
+%% The file named.bst is a bibliography style file for BibTeX 0.99c
+\bibliographystyle{named}
+\bibliography{references}
+
+
+\end{document}
+

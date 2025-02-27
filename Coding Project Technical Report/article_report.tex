@@ -1,0 +1,166 @@
+
+\section{Publication title: \todo{Insert article title}}
+\label{sec:report_template}
+
+\subsection{Introduction and brief description}
+In \cite{todo} \todo{insert citation with reference in BibTex format in the references.bib file}, published at \todo{insert conference name and year}, the authors propose \todo{insert brief description of the algorithm, paraphrasing what stated in the abstract and introduction of the original paper (10-20 rows). Focus on the idea, avoid comments on how successful the model is supposed to be or how great the original authors think it is. If reporting a comment made in the paper, use \emph{"in the original paper it is claimed that ..."}, for example do not say "the algorithm allows to model non linear feature correlations outperforming the state of the art", instead say "the paper claims this algorithm is able to model non linear feature correlations". Do not report the model formula or figures of its architecture.}
+
+
+\paragraph{Introduction checklist:}
+\begin{itemize}
+    \item The model performs top-N item recommendations to a user: \checklist{Yes/No, if No or you are not sure contact teaching assistant}
+    \item The model relies on sequential patterns or recurrent neural networks: \checklist{Yes, if yes or you are not sure contact teaching assistant/No}
+    \item The model relies on non-structured input data such as images or text: \checklist{Yes, if yes or you are not sure contact teaching assistant/No}
+\end{itemize}
+
+
+
+
+
+\subsection{Datasets:} The evaluation is performed on the following datasets, their statistics are reported in Table \ref{tab:dataset_statistics}:
+\begin{itemize}
+    \item \todo{Insert dataset name}: The dataset contains \todo{insert in 2-3 lines a description of its content and value range. For example: the dataset contains the number of user-shop checkpoints}\todo{mention any preprocessing applied. For example, only users with more than 10 checkpoints are kept.}\footnote{\todo{Insert link to the dataset if available} \url{todo}}
+    \item ...
+\end{itemize}
+
+
+\begin{table}[h]
+    \centering
+    \footnotesize
+    \begin{tabular}{lcccc}
+    \toprule
+    Dataset			& Interactions	& Items		& Users 	& Density	\\
+    \midrule
+    \todo{name}	 	& -		& -	        & -	        & $- \cdot10^1$ 	\\
+    \todo{name}	 	& -		& -	        & -	        & $- \cdot10^1$ 	\\
+    \todo{name}	 	& -		& -	        & -	        & $- \cdot10^1$ 	\\
+	\bottomrule
+   	\end{tabular}
+    \caption{Dataset Statistics}
+    \label{tab:dataset_statistics}
+\end{table}
+
+
+
+\paragraph{Datasets checklist:}
+\begin{itemize}
+    \item At least one of the datasets is publicly available for download: \checklist{Yes/No, if No contact the teaching assistant}
+    \item The characteristics (size and density) of the datasets you are using for the experiments (i.e., not those in the dataset description online, but those loaded by the DataReader considering any preprocessing that may be required) are consistent with the ones reported in the original article: \checklist{Yes/No, if No state which are the differences. If None of the datasets has the same statistics contact the teaching assistant}
+\end{itemize}
+
+
+
+\subsection{Evaluation protocol:} The data splitting is performed in the following way: 
+
+\todo{Describe splitting method: holdout picking a certain quota of the interactions, holdout performed for each user, leave-one-out, leave-last-out etc...} 
+
+\todo{Mention how the validation data is split. If it is not described, state that it is not described.}
+
+\todo{Mention if the evaluation is performed ranking a positive (test) item and a fixed number of negative items.}
+
+The evaluation is performed reporting: 
+
+\todo{list the metric@cutoff used in the evaluation, for example Recall and MAP at cutoff 20, 30, 50.}
+
+\paragraph{Evaluation protocol checklist:}
+\begin{itemize}
+    \item The original train-test split of the data is available on the Github repository? \checklist{Yes/No, state for which datasets}
+    \item {[If the evaluation requires it]} The original negative item split used for the evaluation phase (not for training) is available on the Github repository? \checklist{Yes/No/Not using this evaluation method}
+    \item Does the paper mention a validation set? \checklist{Yes/No}
+    \item Does the paper state that the evaluation is performed in the same way (data, metrics) as another article? \checklist{Yes, if so insert citation of that article/No}
+\end{itemize}
+
+
+
+\subsection{Baseline algorithms checklist:}
+\begin{itemize}
+    \item Is TopPopular among the baselines? \checklist{Yes/No}
+    \item Are ItemKNN or UserKNN with cosine similarity among the baselines? \checklist{Yes/No}.
+    \item {[If KNNs are among the baselines]} Does the paper state if they include a shrink term? \checklist{Yes/No/No KNNs among baselines}.
+\end{itemize}
+
+
+
+\subsection{Hyperparameter tuning:} 
+The hyperparameters are tuned using \todo{insert tuning strategy (grid search, random search, Bayesian search... as well as the optimized metric, or "not described")}. The values of the hyperparameters for the proposed method are described in Table \ref{tab:hyperparameter_values}. 
+
+\begin{table}[h]
+    \begin{minipage}{\textwidth}
+    \centering
+    \footnotesize
+    \begin{tabular}{lcc}
+    \toprule
+    Hyperparameter	& Described in	& \multicolumn{1}{c}{Value}	\\
+                	&               & All datasets	\\    
+    \midrule
+    \todo{name}	 	& \todo{Paper / source code} \footnote{If it is mentioned in the paper, state paper, otherwise source code}		& - \footnote{If different hyperparameters are reported for different datasets, create a column for each dataset}	 	\\
+    \todo{name}	 	& \todo{Paper / source code}		& -	 	\\
+    \todo{name}	 	& \todo{Paper / source code}		& -	 	\\
+    
+	\bottomrule
+   	\end{tabular}
+   	\end{minipage}
+    \caption{Hyperparameter Values}
+    \label{tab:hyperparameter_values}
+\end{table}
+
+
+
+\paragraph{Hyperparameter tuning checklist:}
+\begin{itemize}
+    \item Does the paper mention the metric-cutoff optimised during hyperparameter tuning? \checklist{Yes, if so state which/No}
+    \item Does the paper report the hyperparameter value range used during the tuning for the proposed method? \checklist{Yes/No}
+    \item Does the paper report the hyperparameter value range used during the tuning for the baseline methods? \checklist{Yes/No}
+    \item Does the paper state that the hyperparameters of a baseline are the \emph{default} ones or are taken from another article? \checklist{Yes, if so state which/No}
+    \item Does the paper mention how the optimal number of epochs is selected? \checklist{Yes, if so describe it/No}
+    \item Does the paper state that the value of one of the hyperparameters is fixed for all or some of the baselines?\footnote{Examples of hyperparameters that may be fixed across different models are the number of latent factors for matrix factorization models, the architecture or size of the encoding layer in autoeconders etc... Sometimes it is stated this is done to ensure a \emph{"fair"} comparison, while in reality it is the opposite. When present this almost certainly means the evaluation reported in the paper contains a fundamental error.} \checklist{Yes, if so state which/No}    
+\end{itemize}
+
+
+
+
+
+
+\subsection{Source code:} 
+The source code is publicly available\footnote{\todo{add link to the public repository} \url{todo}}.
+Table \ref{tab:dataset_results} reports the results contained in the original paper, the results obtained running the source code as provided by the authors (with the hyperparameters reported in Table \ref{tab:hyperparameter_values}) and lastly the results obtained with the ported version of the algorithm when evaluated with the Evaluator object of the framework.\footnote{If the training time of the algorithm is very long and you are not able to use your own hardware or free resources e.g., Colab, contact the teaching assistant.}
+
+\begin{table}[H]
+    \begin{minipage}{\textwidth}
+    \centering
+    \footnotesize
+    \begin{tabular}{llcc}
+    \toprule
+    Dataset			& Result from 	& Metric@20		& ... \\
+    \midrule
+    \multirow{3}{*}{\todo{name}}	 	
+                    & Paper		        & -	  \footnote{For the \emph{Paper} results just copy the results reported in the original article}      & -	        \\
+                    & Original source	& -	        & -	        \\
+                    & Ported source		& -	        & -	        \\
+                    & ItemKNN cosine \footnote{Use the baseline optimization code provided in run\_CIKM\_18\_ExampleAlgorithm.py}	& -	        & -	        \\
+    \midrule
+    \multirow{3}{*}{\todo{name}}	 	
+                    & Paper		        & -	        & -	        \\
+                    & Original source	& -	        & -	        \\
+                    & Ported source		& -	        & -	        \\
+                    & ItemKNN cosine	& -	        & -	        \\
+                    
+	\bottomrule
+   	\end{tabular}
+   	\end{minipage}
+    \caption{Results obtained by the algorithm on the various datasets and metrics}
+    \label{tab:dataset_results}
+\end{table}
+
+
+
+\paragraph{Source code checklist:}
+\begin{itemize}
+    \item Is the original source code executable with at most minor changes (e.g., fixing imports or downloading data)? \checklist{Yes/No, if so mention what the problem is}
+    \item Is the original source code, with the correct hyperparameters, able to reproduce the results reported in the paper? \checklist{Yes/No. Write you result for one metric in terms of its percentage of the original result (for example Recall@20 98\%, or 127\%... )}
+    \item Does the ported version of the original algorithm pass the test suite provided in Test/run\_unittest\_recommenders.py? \checklist{Yes/No}
+    \item Is the ported version of the original algorithm, with the correct hyperparameters, able to reproduce the results obtained by the original source code? \checklist{Yes/No. Write you result for one metric in terms of its percentage of the original result (for example Recall@20 98\%, or 127\%... )}
+    \item Is the source code delivered compliant with the requirements in Section \ref{sec:source_code_requirements}? \checklist{Yes/No, if so describe how}
+
+    \item In the original source code is the test data used during the training in any way (for example to select the number of epochs or to select the negative samples...)? \checklist{Yes, if so mention where and provide a reference to the code/No}
+\end{itemize}

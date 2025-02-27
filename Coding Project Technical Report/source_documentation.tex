@@ -1,0 +1,337 @@
+
+\section{Source code documentation: BaseRecommender}
+\label{sec:source_documentation_BaseRecommender}
+
+Each RecommenderWrapper should inherit from the BaseRecommender class, which provides the following abstract methods:
+
+\begin{itemize}
+    \item \texttt{fit}
+    \item \texttt{\_compute\_item\_score}
+    \item \texttt{save\_model}
+    \item \texttt{load\_model}
+\end{itemize}
+
+
+\subsection{\texttt{fit}}
+This method has the purpose of fitting a recommender model, for example if the model is a KNN based on a certain similarity, then the fit function will compute all the item-item similarity matrix. If the recommender is a machine learning model, then the fit will contain the training loop.
+
+Signature: \texttt{fit(custom\_args, temp\_file\_folder=None, **earlystopping\_kwargs)}
+
+Parameters:
+\begin{itemize}
+    \item \textbf{\texttt{custom\_args}} any hyperparameter the algorithm needs, prefer keyword arguments
+    \item \textbf{\texttt{temp\_file\_folder}} To be added only if the Wrapper needs to save files in a temporary folder (i.e., saving the best model during early-stopping)
+    \item \textbf{\texttt{**earlystopping\_kwargs}} the arguments to be provided to the early-stopping training function.
+\end{itemize}
+
+Returns:
+\begin{itemize}
+    \item \textbf{None} No return value is required
+\end{itemize}
+
+
+\subsection{\texttt{\_compute\_item\_score}}
+This function has the purpose of computing the user-item scores, either in terms of predicted ratings or in terms of another scoring function. Items with the highest scores will be recommended.
+If you have an ItemKNN model this function simply computes the dot product between the user profile and the item similarity matrix, if you have a matrix factorization algorithm this function computes the product between item factors and user factors. If the algorithm you are working on belongs to either of these categories then you can use the implementation already available in the respective classes of methods (your class should inherit from BaseMatrixFactorizationRecommender or from one of the BaseSimilarityRecommender).
+
+
+Signature: \texttt{\_compute\_item\_score(user\_id\_array, items\_to\_compute = None)}
+
+Parameters:
+\begin{itemize}
+    \item \textbf{\texttt{user\_id\_array}} an array of any length that will contain the IDs of the users for which the scores should be computed
+    \item \textbf{\texttt{items\_to\_compute}} an array of any length that will contain the IDs of the items we want to compute the scores of. If None, the scores will be computed for all items.
+
+\end{itemize}
+
+Returns:
+\begin{itemize}
+    \item \textbf{\texttt{item\_scores}} an array of shape (len(user\_id\_array), total\_n\_items) containing the user-item scores. The only admitted values are: any real number, -numpy.inf (to be used if the score of that user-item cannot or should not be computed). If items\_to\_compute is None, the scores of all items must be filled. If items\_to\_compute is not None only the scores of the selected items must be filled. The scores of items that are not selected will be associated with a -np.inf value. If the model does not allow to specify which items to score, a simple workaround is to instantiate an array of -np.inf values, call the original recommendation model prediction function and only copy the predictions for the items in the items\_to\_compute argument.
+\end{itemize}
+
+
+
+
+\subsection{\texttt{save\_model}}
+This function has the purpose of saving the current model state to allow its re-use.
+The following two sequences must work and produce the same identical results: create model instance, fit model, save model; create model instance, load model.
+This function must save all hyperparameters relevant for the state of the model in a dictionary with the DataIO class, as per example provided.
+
+Signature: \texttt{save\_model(folder\_path, file\_name = None)}
+
+Parameters:
+\begin{itemize}
+    \item \textbf{\texttt{folder\_path}} the folder in which you want to save the model
+    \item \textbf{\texttt{file\_name}} the root name all save files will have. If the function requires to save multiple files, all will have file\_name as prefix. If file\_name is None the content of the attribute RECOMMENDER\_NAME is used as prefix.
+
+\end{itemize}
+
+Returns:
+\begin{itemize}
+    \item \textbf{None} No return value is required
+\end{itemize}
+
+
+
+\textbf{\emph{Important Notice}}: If you save a model using Keras Saver, or other savers, consider that they may be developed to perform periodic saves during the training of the model in a transparent way, therefore they may update your saves or remove old ones without you noticing. Always save the model with a Saver instance used only to that purpose, within the save function. If you find that during the training of models requiring many epochs sometimes the "best\_model" saved by the early-stopping disappears, then you are not using an independent saver in the save\_model function and the best\_model was automatically removed at some point during the training.
+
+
+\subsection{\texttt{load\_model}}
+This function has the purpose of loading a previously saved model.
+The following two sequences must work and produce the same identical results: create model instance, fit model, save model; create model instance, load model.
+This function must load all hyperparameters relevant for the state of the model from a dictionary using the DataIO class, as per example provided.
+
+Signature: \texttt{load\_model(folder\_path, file\_name = None)}
+
+Parameters:
+\begin{itemize}
+    \item \textbf{\texttt{folder\_path}} the folder from which you want to load the model
+    \item \textbf{\texttt{file\_name}} the root name all save files will have. If the function requires to load multiple files, all will have file\_name as prefix. If file\_name is None the content of the attribute RECOMMENDER\_NAME is used as prefix.
+
+\end{itemize}
+
+Returns:
+\begin{itemize}
+    \item \textbf{None} No return value is required
+\end{itemize}
+
+
+
+
+
+\clearpage
+
+\section{Source code documentation: Incremental\_Training\_Early\_Stopping}
+\label{sec:source_documentation_EarlyStopping}
+
+If a model is trained for a certain number of epochs it needs a way to select the optimal number of epochs and you should apply early-stopping. In such case the Wrapper should inherit from the Incremental\_Training\_Early\_Stopping class.
+
+
+The class Incremental\_Training\_Early\_Stopping class provides the following abstract methods:
+
+\begin{itemize}
+    \item \texttt{\_run\_epoch}
+    \item \texttt{\_prepare\_model\_for\_validation}
+    \item \texttt{\_update\_best\_model}
+\end{itemize}
+
+The behaviour of this class and its usage are exemplified with the code below. A new instance of the recommender model is created and a clone is made and referred to as the initial "best model". Then the early-stopping can begin. Function \texttt{\_train\_with\_early\_stopping} takes care of handling the process and calls three functions which you will need to implement for the specific algorithm you are porting.
+The model is trained for a certain number of epochs with the \texttt{\_run\_epoch} method. After that the model needs to be evaluated, the function \texttt{\_prepare\_model\_for\_validation} is called and then the Recommender object is passed to an Evaluator object. After the evaluation is complete, if the current model status is better than the previously found "best model", then the "best model" is updated calling the \texttt{\_update\_best\_model} function.
+After the training is complete, the "best model" must be loaded again. At a higher level, if the model uses Tensorflow, the fit function should look as in:
+
+\begin{lstlisting}[language=Python]
+self._model_instance = get_model_instance(...)
+
+# Set the initial "Best model"
+self._update_best_model()
+
+self._train_with_early_stopping(epochs_max=self.epochs, 
+                                algorithm_name=self.RECOMMENDER_NAME,
+                                **earlystopping_kwargs)
+
+# close session tensorflow and open another
+self.sess.close()
+self.sess = tf.Session()
+
+# Load the final "Best model"
+self.load_model(self.temp_file_folder, file_name="_best_model")
+
+# Remove the temp directory where the "best model" had been saved
+self._clean_temp_folder(temp_file_folder=self.temp_file_folder)
+
+self._print("Training complete")
+\end{lstlisting}
+
+
+
+
+
+\subsection{\texttt{\_run\_epoch}}
+This function trains the model for \textbf{one epoch}. It commonly contains a loop over a certain batch of data or the users. It should contain a copy of the train loop written by the original authors. 
+
+Signature: \texttt{\_run\_epoch(num\_epoch)}
+
+Parameters:
+\begin{itemize}
+    \item \textbf{\texttt{num\_epoch}} The number of the current epoch
+\end{itemize}
+
+Returns:
+\begin{itemize}
+    \item \textbf{None} No return value is required
+\end{itemize}
+
+
+
+
+
+\subsection{\texttt{\_prepare\_model\_for\_validation}}
+This function is called right before the model is evaluated. Commonly this function does nothing at all and only contains the \texttt{pass} command. It can be useful if the model is not available in a format that allows to compute the recommendations and a parsing is required, for example if the model is developed in a non-Python language and it is saved as a file. Since parsing the file into a python data structure may be expensive, instead of doing it for every epoch it can be done in this function only when required. 
+
+Signature: \texttt{\_prepare\_model\_for\_validation()}
+
+Parameters:
+\begin{itemize}
+    \item No parameter is present
+
+\end{itemize}
+
+Returns:
+\begin{itemize}
+    \item \textbf{None} No return value is required
+\end{itemize}
+
+
+\subsection{\texttt{\_update\_best\_model}}
+This function is called when the current status of the model provides better recommendation quality than the previously best one and therefore the "best model" must be updated. This function only needs to create a persistent copy of the best model. 
+The persistent copy should be done via a deep copy, to ensure that the model that will be trained and the "best model" will be disconnected. If the model is more complex, a basic but sufficient implementation simply saves the current model in a temporary folder in the following way
+\begin{lstlisting}[language=Python]
+def _update_best_model(self):
+    self.save_model(self.temp_file_folder, file_name="_best_model")
+\end{lstlisting}
+
+Signature: \texttt{\_update\_best\_model()}
+
+Parameters:
+\begin{itemize}
+    \item No parameter is present
+
+\end{itemize}
+
+Returns:
+\begin{itemize}
+    \item \textbf{None} No return value is required
+\end{itemize}
+
+
+
+
+
+
+
+
+
+
+
+\clearpage
+
+\section{Source code documentation: BaseTempFolder}
+\label{sec:source_documentation_BaseTempFolder}
+
+If a Wrapper needs to save a temporary file it should inherit from the BaseTempFolder class, which provides the following methods:
+
+
+\subsection{\texttt{\_get\_unique\_temp\_folder}}
+This function returns a unique folder path, to be used every time something needs to be saved. This function should be called at the beginning of the fit function.
+
+Signature: \texttt{self.\_get\_unique\_temp\_folder(input\_temp\_file\_folder = None)}
+
+Parameters:
+\begin{itemize}
+    \item \textbf{\texttt{input\_temp\_file\_folder}} The file path requested or None. If None is provided, a path based on the recommender name is used.
+\end{itemize}
+
+Returns:
+\begin{itemize}
+    \item \textbf{\texttt{unique\_temp\_folder}} A folder guaranteed to be unique and not already existent.
+\end{itemize}
+
+
+\subsection{\texttt{\_clean\_temp\_folder}}
+This function deletes the temp folder previously created, it should be called at the very end of the fit function.
+
+Signature: \texttt{self.\_clean\_temp\_folder(temp\_file\_folder = self.temp\_file\_folder)}
+
+Parameters:
+\begin{itemize}
+    \item \textbf{\texttt{temp\_file\_folder}} The temp folder to remove
+\end{itemize}
+
+Returns:
+\begin{itemize}
+    \item \textbf{None} No return value is required
+\end{itemize}
+
+
+
+
+% \subsection{model\_name}
+% This function ...
+
+% Signature: \texttt{model\_name(...)}
+
+% Parameters:
+% \begin{itemize}
+%     \item \textbf{param} ...
+
+% \end{itemize}
+
+% Returns:
+% \begin{itemize}
+%     \item \textbf{None} No return value is required
+% \end{itemize}
+
+
+
+
+
+\clearpage
+
+\section{Source code documentation: DataReader}
+\label{sec:source_documentation_DataReader}
+
+The DataReader task is to read the data of a specific dataset and load it into a dictionary of sparse matrices. You should implement the constructor in order to fill the class attributes.
+
+
+\subsection{\texttt{\_\_init\_\_(pre\_splitted\_path, **kwargs)}}
+The constructor performs all the operation required, it contains two parts: first it tries to load a previously saved version of the data, if that is not available it parses the original data applying any preprocessing required.
+
+Signature: \texttt{\_\_init\_\_(pre\_splitted\_path, **kwargs)}
+
+Parameters:
+\begin{itemize}
+    \item \textbf{\texttt{pre\_splitted\_path}} The folder where the experiments are being made, the data files will be saved in a further subfolder called "data\_split/".
+\end{itemize}
+
+Returns:
+\begin{itemize}
+    \item \textbf{None} No return value is required
+\end{itemize}
+
+
+\subsection{Class attributes}
+
+\begin{itemize}
+    \item \textbf{\texttt{DATASET\_NAME}} A string with the dataset name (e.g., "Movielens1M")
+    \item \textbf{\texttt{URM\_DICT}} A dictionary containing the name of the URM and the corresponding object. For example:
+    \begin{lstlisting}[language=Python]
+    self.URM_DICT = {
+        "URM_train": URM_train,
+        "URM_test": URM_test,
+        "URM_validation": URM_validation,
+        "URM_test_negative": URM_test_negative,
+        "URM_timestamp": URM_timestamp,
+    }
+    \end{lstlisting}
+    
+    \item \textbf{\texttt{ICM\_DICT}} A dictionary containing the name of the ICM and the corresponding object, similarly to URM\_DICT.
+\end{itemize}
+
+
+
+
+% \subsection{model\_name}
+% This function ...
+
+% Signature: \texttt{model\_name(...)}
+
+% Parameters:
+% \begin{itemize}
+%     \item \textbf{param} ...
+
+% \end{itemize}
+
+% Returns:
+% \begin{itemize}
+%     \item \textbf{None} No return value is required
+% \end{itemize}
