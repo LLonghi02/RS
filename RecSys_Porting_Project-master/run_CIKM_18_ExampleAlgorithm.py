@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
+sys.path.append('c:/Users/laral/Desktop/Progetto RS/RS/RecSys_Porting_Project-master')
 
 from HyperparameterTuning.SearchSingleCase import SearchSingleCase
 from HyperparameterTuning.SearchAbstractClass import SearchInputRecommenderArgs
