@@ -6,6 +6,8 @@ Created on 13/02/20
 @author: Maurizio Ferrari Dacrema
 """
 
+import sys
+sys.path.append('c:/Users/laral/Desktop/Progetto RS/RS/RecSys_Porting_Project-master')
 
 
 

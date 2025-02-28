@@ -18,9 +18,9 @@ from Recommenders.KNN.UserKNNCFRecommender import UserKNNCFRecommender
 from Recommenders.KNN.ItemKNNCFRecommender import ItemKNNCFRecommender
 from Recommenders.GraphBased.P3alphaRecommender import P3alphaRecommender
 from Recommenders.GraphBased.RP3betaRecommender import RP3betaRecommender
-from Recommenders.GraphBased.LightGCNRecommender import LightGCNRecommender
-from Recommenders.GraphBased.INMORecommender import INMORecommender
-from Recommenders.GraphBased.GraphFilterCFRecommender import GraphFilterCF_W_Recommender, GraphFilterCFRecommender
+#from Recommenders.GraphBased.LightGCNRecommender import LightGCNRecommender
+#from Recommenders.GraphBased.INMORecommender import INMORecommender
+#from Recommenders.GraphBased.GraphFilterCFRecommender import GraphFilterCF_W_Recommender, GraphFilterCFRecommender
 from Recommenders.EASE_R.EASE_R_Recommender import EASE_R_Recommender
 
 # KNN machine learning
@@ -712,96 +712,96 @@ def getHyperparameterSpace(recommender_class, experiment_configuration,
 
     #########################################################################################################
 
-    elif recommender_class is LightGCNRecommender:
+    # elif recommender_class is LightGCNRecommender:
 
-        hyperparameters_range_dictionary = {
-            "epochs": Categorical([1000]),
-            "batch_size": Categorical([256, 512, 1024, 2048, 4096]),
-            "learning_rate": Real(low=1e-6, high=1e-1, prior="log-uniform"),
+    #     hyperparameters_range_dictionary = {
+    #         "epochs": Categorical([1000]),
+    #         "batch_size": Categorical([256, 512, 1024, 2048, 4096]),
+    #         "learning_rate": Real(low=1e-6, high=1e-1, prior="log-uniform"),
 
-            "embedding_size": Integer(2, 350),
-            "sgd_mode": Categorical(["sgd", "adagrad", "adam", "rmsprop"]),
+    #         "embedding_size": Integer(2, 350),
+    #         "sgd_mode": Categorical(["sgd", "adagrad", "adam", "rmsprop"]),
 
-            "GNN_layers_K": Integer(1, 6),  # The original paper limits it to 4
-            "l2_reg": Real(low=0.1, high=0.9, prior="uniform"),
-            "dropout_rate": Real(low=1e-6, high=1e-1, prior="log-uniform"),
-        }
+    #         "GNN_layers_K": Integer(1, 6),  # The original paper limits it to 4
+    #         "l2_reg": Real(low=0.1, high=0.9, prior="uniform"),
+    #         "dropout_rate": Real(low=1e-6, high=1e-1, prior="log-uniform"),
+    #     }
 
-        recommender_input_args = SearchInputRecommenderArgs(
-            CONSTRUCTOR_POSITIONAL_ARGS = [URM_train],
-            CONSTRUCTOR_KEYWORD_ARGS = {"use_gpu": True, "verbose":False},
-            FIT_POSITIONAL_ARGS = [],
-            FIT_KEYWORD_ARGS = {},
-            EARLYSTOPPING_KEYWORD_ARGS = earlystopping_keywargs,
-        )
-
-
-    #########################################################################################################
-
-    elif recommender_class is INMORecommender:
-
-        hyperparameters_range_dictionary = {
-            "epochs": Categorical([1000]),
-            "batch_size": Categorical([256, 512, 1024, 2048, 4096]),
-            "learning_rate": Real(low=1e-6, high=1e-1, prior="log-uniform"),
-
-            "embedding_size": Integer(2, 350),
-            "sgd_mode": Categorical(["adam"]),
-
-            "GNN_layers_K": Integer(1, 6),
-            "l2_reg": Real(low=1e-6, high=1e-1, prior="log-uniform"),
-            "template_loss_weight": Real(low=1e-4, high=1e-1, prior="log-uniform"),
-            "template_node_ranking_metric": Categorical(["degree", "sort", "page_rank"]),
-            "dropout_rate": Real(low=0.1, high=0.9, prior="uniform"),
-            "template_ratio": Real(low=0.1, high=1.0, prior="uniform"),
-
-            "normalization_decay": Categorical([0.99]),
-        }
-
-        recommender_input_args = SearchInputRecommenderArgs(
-            CONSTRUCTOR_POSITIONAL_ARGS = [URM_train],
-            CONSTRUCTOR_KEYWORD_ARGS = {"use_gpu": True, "verbose":False},
-            FIT_POSITIONAL_ARGS = [],
-            FIT_KEYWORD_ARGS = {},
-            EARLYSTOPPING_KEYWORD_ARGS = earlystopping_keywargs,
-        )
+        # recommender_input_args = SearchInputRecommenderArgs(
+        #     CONSTRUCTOR_POSITIONAL_ARGS = [URM_train],
+        #     CONSTRUCTOR_KEYWORD_ARGS = {"use_gpu": True, "verbose":False},
+        #     FIT_POSITIONAL_ARGS = [],
+        #     FIT_KEYWORD_ARGS = {},
+        #     EARLYSTOPPING_KEYWORD_ARGS = earlystopping_keywargs,
+        # )
 
 
     #########################################################################################################
 
+#     elif recommender_class is INMORecommender:
 
-    elif recommender_class is GraphFilterCF_W_Recommender:
+#         hyperparameters_range_dictionary = {
+#             "epochs": Categorical([1000]),
+#             "batch_size": Categorical([256, 512, 1024, 2048, 4096]),
+#             "learning_rate": Real(low=1e-6, high=1e-1, prior="log-uniform"),
 
-        hyperparameters_range_dictionary = {
-            "topK": Integer(5, min(5000, n_items-1)),       # This model requires a larger topK
-            "alpha": Real(low=1e-3, high=1e3, prior="log-uniform"),
-            "num_factors": Integer(1, 350),
-        }
+#             "embedding_size": Integer(2, 350),
+#             "sgd_mode": Categorical(["adam"]),
 
-        recommender_input_args = SearchInputRecommenderArgs(
-            CONSTRUCTOR_POSITIONAL_ARGS = [URM_train],
-            CONSTRUCTOR_KEYWORD_ARGS = {},
-            FIT_POSITIONAL_ARGS = [],
-            FIT_KEYWORD_ARGS = {},
-            EARLYSTOPPING_KEYWORD_ARGS = {},
-        )
+#             "GNN_layers_K": Integer(1, 6),
+#             "l2_reg": Real(low=1e-6, high=1e-1, prior="log-uniform"),
+#             "template_loss_weight": Real(low=1e-4, high=1e-1, prior="log-uniform"),
+#             "template_node_ranking_metric": Categorical(["degree", "sort", "page_rank"]),
+#             "dropout_rate": Real(low=0.1, high=0.9, prior="uniform"),
+#             "template_ratio": Real(low=0.1, high=1.0, prior="uniform"),
 
-   ##########################################################################################################
+#             "normalization_decay": Categorical([0.99]),
+#         }
 
-    elif recommender_class is GraphFilterCFRecommender:
+#         recommender_input_args = SearchInputRecommenderArgs(
+#             CONSTRUCTOR_POSITIONAL_ARGS = [URM_train],
+#             CONSTRUCTOR_KEYWORD_ARGS = {"use_gpu": True, "verbose":False},
+#             FIT_POSITIONAL_ARGS = [],
+#             FIT_KEYWORD_ARGS = {},
+#             EARLYSTOPPING_KEYWORD_ARGS = earlystopping_keywargs,
+#         )
 
-        hyperparameters_range_dictionary = {
-            "alpha": Real(low=1e-3, high=1e3, prior="log-uniform"),
-            "num_factors": Integer(1, 350),
-        }
 
-        recommender_input_args = SearchInputRecommenderArgs(
-            CONSTRUCTOR_POSITIONAL_ARGS = [URM_train],
-            CONSTRUCTOR_KEYWORD_ARGS = {},
-            FIT_POSITIONAL_ARGS = [],
-            FIT_KEYWORD_ARGS = {},
-            EARLYSTOPPING_KEYWORD_ARGS = {},
-        )
+#     #########################################################################################################
+
+
+#     elif recommender_class is GraphFilterCF_W_Recommender:
+
+#         hyperparameters_range_dictionary = {
+#             "topK": Integer(5, min(5000, n_items-1)),       # This model requires a larger topK
+#             "alpha": Real(low=1e-3, high=1e3, prior="log-uniform"),
+#             "num_factors": Integer(1, 350),
+#         }
+
+#         recommender_input_args = SearchInputRecommenderArgs(
+#             CONSTRUCTOR_POSITIONAL_ARGS = [URM_train],
+#             CONSTRUCTOR_KEYWORD_ARGS = {},
+#             FIT_POSITIONAL_ARGS = [],
+#             FIT_KEYWORD_ARGS = {},
+#             EARLYSTOPPING_KEYWORD_ARGS = {},
+#         )
+
+#    ##########################################################################################################
+
+#     elif recommender_class is GraphFilterCFRecommender:
+
+#         hyperparameters_range_dictionary = {
+#             "alpha": Real(low=1e-3, high=1e3, prior="log-uniform"),
+#             "num_factors": Integer(1, 350),
+#         }
+
+#         recommender_input_args = SearchInputRecommenderArgs(
+#             CONSTRUCTOR_POSITIONAL_ARGS = [URM_train],
+#             CONSTRUCTOR_KEYWORD_ARGS = {},
+#             FIT_POSITIONAL_ARGS = [],
+#             FIT_KEYWORD_ARGS = {},
+#             EARLYSTOPPING_KEYWORD_ARGS = {},
+#         )
 
    ##########################################################################################################
     #

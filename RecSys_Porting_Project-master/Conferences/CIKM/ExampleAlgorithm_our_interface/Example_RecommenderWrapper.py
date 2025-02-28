@@ -5,6 +5,8 @@ Created on 18/12/18
 
 @author: Maurizio Ferrari Dacrema
 """
+import sys
+sys.path.append('c:/Users/laral/Desktop/Progetto RS/RS/RecSys_Porting_Project-master')
 
 
 from Recommenders.BaseCBFRecommender import BaseItemCBFRecommender
