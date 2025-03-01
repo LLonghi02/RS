@@ -6,7 +6,7 @@ Created on 18/12/18
 @author: Maurizio Ferrari Dacrema
 """
 import sys
-sys.path.append('c:/Users/laral/Desktop/Progetto RS/RS/RecSys_Porting_Project-master')
+#sys.path.append('c:/Users/laral/Desktop/Progetto RS/RS/RecSys_Porting_Project-master')
 
 from Recommenders.BaseCBFRecommender import BaseItemCBFRecommender
 from Recommenders.BaseMatrixFactorizationRecommender import BaseMatrixFactorizationRecommender
@@ -15,7 +15,7 @@ from Recommenders.BaseTempFolder import BaseTempFolder
 from Recommenders.DataIO import DataIO
 
 import numpy as np
-import tensorflow as tf
+#import tensorflow as tf
 import os, shutil
 import scipy.sparse as sps
 import logging

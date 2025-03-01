@@ -6,7 +6,9 @@ Created on 22/11/2018
 @author: Maurizio Ferrari Dacrema
 """
 import sys
-sys.path.append('c:/Users/laral/Desktop/Progetto RS/RS/RecSys_Porting_Project-master')
+#sys.path.append('c:/Users/laral/Desktop/Progetto RS/RS/RecSys_Porting_Project-master')
+sys.path.append('c:/Users/michelebalena/Desktop/Progetto RS/RS/RecSys_Porting_Project-master')
+
 
 import os, shutil
 import numpy as np
