@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 from scipy import sparse
+from Conferences.RecSysProject.CODIGEM_our_interface.AEReader import AmazonElectronicsReader
 
 class DataLoader():
     '''
@@ -120,8 +121,8 @@ def numerize(tp, profile2id, show2id):
 
 if __name__ == '__main__':
 
-    path = "PATH TO DATASET" # Path to the dataset
-    dataset_name = "ml-20m" # Name of the dataset
+    path = r"C:\Users\laral\Desktop\RS\RecSys_Porting_Project-master\Conferences\RecSysProject\CODIGEM_our_interface\AEReader.py"
+    dataset_name = "AmazonElectronics" # Name of the dataset
     pro_dir = os.path.join(path, 'pro_sg')
     n_heldout_users = 10000
     rating_threshold = 3.5
@@ -168,13 +169,13 @@ if __name__ == '__main__':
                 f.write('%s\n' % sid)
 
         vad_plays = raw_data.loc[raw_data['userId'].isin(vd_users)]
-        vad_plays = vad_plays.loc[vad_plays['movieId'].isin(unique_sid)]
+        vad_plays = vad_plays.loc[vad_plays['itemId'].isin(unique_sid)]
 
         vad_plays_tr, vad_plays_te = split_train_test_proportion(vad_plays)
 
+        # Dati di test
         test_plays = raw_data.loc[raw_data['userId'].isin(te_users)]
-        test_plays = test_plays.loc[test_plays['movieId'].isin(unique_sid)]
-
+        test_plays = test_plays.loc[test_plays['itemId'].isin(unique_sid)]
         test_plays_tr, test_plays_te = split_train_test_proportion(test_plays)
 
         train_data = numerize(train_plays, profile2id, show2id)

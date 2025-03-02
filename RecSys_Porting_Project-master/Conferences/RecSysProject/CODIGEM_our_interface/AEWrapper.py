@@ -5,8 +5,7 @@ Created on 18/12/18
 
 @author: Maurizio Ferrari Dacrema
 """
-import sys
-#sys.path.append('c:/Users/laral/Desktop/Progetto RS/RS/RecSys_Porting_Project-master')
+
 
 from Recommenders.BaseCBFRecommender import BaseItemCBFRecommender
 from Recommenders.BaseMatrixFactorizationRecommender import BaseMatrixFactorizationRecommender
@@ -15,23 +14,23 @@ from Recommenders.BaseTempFolder import BaseTempFolder
 from Recommenders.DataIO import DataIO
 
 import numpy as np
-#import tensorflow as tf
+import tensorflow as tf
 import os, shutil
 import scipy.sparse as sps
-import logging
 
 from Conferences.CIKM.ExampleAlgorithm_github.main import get_model
 
 
 
-class AE_Wrapper(BaseItemCBFRecommender, Incremental_Training_Early_Stopping, BaseTempFolder):
-    print("sono dentro AE_Wrapper")
-    RECOMMENDER_NAME = "AE_Wrapper"
+# TODO replace the recommender class name with the correct one-OK
+class AEWrapper(BaseItemCBFRecommender, Incremental_Training_Early_Stopping, BaseTempFolder):
+
+    # TODO replace the recommender name with the correct one-OK
+    RECOMMENDER_NAME = "AEWrapper"
 
     def __init__(self, URM_train, ICM_train):
-        print("sono dentro init AE_Wrapper")
         # TODO remove ICM_train and inheritance from BaseItemCBFRecommender if content features are not needed
-        super(AE_Wrapper, self).__init__(URM_train, ICM_train)
+        super(AEWrapper, self).__init__(URM_train, ICM_train)
 
         # This is used in _compute_item_score
         self._item_indices = np.arange(0, self.n_items, dtype=np.int)
@@ -66,8 +65,9 @@ class AE_Wrapper(BaseItemCBFRecommender, Incremental_Training_Early_Stopping, Ba
             # The prediction requires a list of two arrays user_id, item_id of equal length
             # To compute the recommendations for a single user, we must provide its index as many times as the
             # number of items
-            item_score_user = self.model.predict([self._user_ones_vector*user_id, item_indices],
-                                                 batch_size=100, verbose=0)
+            #item_score_user = self.model.predict([self._user_ones_vector*user_id, item_indices],batch_size=100, verbose=0)
+
+            item_score_user = self.model.predict(user_id, item_indices)
 
             # Do not modify this
             # Put the predictions in the correct items
@@ -86,16 +86,16 @@ class AE_Wrapper(BaseItemCBFRecommender, Incremental_Training_Early_Stopping, Ba
         It should be used both in the fit function and in the load_model function
         :return:
         """
+
         tf.reset_default_graph()
 
-        # Always clear the default graph if using tehsorflow
-        if tf.__version__.startswith("2"):
-            tf.keras.backend.clear_session()  # Clear previous models and free memory
-        else:
-            tf.compat.v1.reset_default_graph()  # For older versions of TensorFlow
-
         # TODO Instantiate the model
-        self.model = get_model(
+        # Always clear the default graph if using tehsorflow
+
+
+
+
+        """self.model = get_model(
             num_users=self.n_users,
             num_items=self.n_items,
             num_factors=self.num_factors,  # Ensure this attribute is defined
@@ -109,26 +109,32 @@ class AE_Wrapper(BaseItemCBFRecommender, Incremental_Training_Early_Stopping, Ba
             random_seed=self.random_seed,  # Ensure this attribute is defined
             print_step=10,
             verbose=False
+        )"""
+        self.model = CODIGEM_Model(
+            num_users=self.n_users,
+            num_items=self.n_items,
+            num_factors=self.num_factors,
+            learning_rate=self.learning_rate,
+            activation='relu',
+            hidden_layers=[200, 100]
         )
-
-
 
     def fit(self,
             epochs = 100,
 
-            # TODO replace those hyperparameters,FATTO
-            learning_rate_cvae = 1e-4,
-            num_factors = 30,
-            dimensions_vae = [100, 50],
-            epochs_vae = [30, 30],
-            batch_size = 64,
-            lambda_u = 0.5,
-            lambda_v = 50,
-            lambda_r = 5,
-            a = 0.5,
-            b = 0.001,
-            M = 100,
-
+            # TODO replace those hyperparameters with the ones you need
+            learning_rate_vae = 1e-2,
+            learning_rate_cvae = 1e-3,
+            num_factors = 50,
+            dimensions_vae = [200, 100],
+            epochs_vae = [50, 50],
+            batch_size = 128,
+            lambda_u = 0.1,
+            lambda_v = 10,
+            lambda_r = 1,
+            a = 1,
+            b = 0.01,
+            M = 300,
 
             # These are standard
             temp_file_folder = None,
@@ -145,6 +151,7 @@ class AE_Wrapper(BaseItemCBFRecommender, Incremental_Training_Early_Stopping, Ba
         #  If you are using tensorflow before creating the model call tf.reset_default_graph()
 
         # The following code contains various operations needed by another wrapper
+
 
         self._params = Params()
         self._params.lambda_u = lambda_u
@@ -232,29 +239,16 @@ class AE_Wrapper(BaseItemCBFRecommender, Incremental_Training_Early_Stopping, Ba
 
 
     def _run_epoch(self, currentEpoch):
-        # TODO replace this with the train loop for one epoch of the model, FATTO
+        # TODO replace this with the train loop for one epoch of the model
 
         n = self.ICM_train.shape[0]
 
         # for epoch in range(self._params.n_epochs):
         num_iter = int(n / self._params.batch_size)
         # gen_loss = self.cdl_estimate(data_x, params.cdl_max_iter)
-        for i in range(num_iter):
-            # Estimazione del loss generativo per il batch corrente
-            gen_loss = self.model.cdl_estimate(self.ICM_train, num_iter)
-            
-            # Trasformazione dei dati nel modello
-            self.model.m_theta[:] = self.model.transform(self.ICM_train)
-
-            # Stima della funzione di verosimiglianza
-            likelihood = self.model.pmf_estimate(
-                self._train_users, 
-                self._train_items, 
-                None, 
-                None, 
-                self._params
-            )
-        
+        gen_loss = self.model.cdl_estimate(self.ICM_train, num_iter)
+        self.model.m_theta[:] = self.model.transform(self.ICM_train)
+        likelihood = self.model.pmf_estimate(self._train_users, self._train_items, None, None, self._params)
         loss = -likelihood + 0.5 * gen_loss * n * self._params.lambda_r
 
         self.USER_factors = self.model.m_U.copy()
