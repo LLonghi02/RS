@@ -14,7 +14,7 @@ import numpy as np
 from Recommenders.DataIO import DataIO
 from Recommenders.Recommender_utils import reshapeSparse
 
-class AmazonElectronicsReader(_AmazonReviewDataReader):
+class AEReader(_AmazonReviewDataReader):
 
     URM_DICT = {}
     ICM_DICT = {}
@@ -28,13 +28,14 @@ class AmazonElectronicsReader(_AmazonReviewDataReader):
 
     def __init__(self, pre_splitted_path):
 
-        super(AmazonElectronicsReader, self).__init__()
+        super(AEReader, self).__init__()
 
         pre_splitted_path += "data_split/"
         pre_splitted_filename = "splitted_data_"
 
-        # Percorso del dataset
-        original_data_path = os.path.join(os.path.dirname(__file__), '..', "..", "ExampleAlgorithm_github/data/amazon/")
+        original_data_path = os.path.join("C:", "Users", "laral", "Desktop", "RS", "RecSys_Porting_Project-master",
+                                          "Data_manager", "AmazonReviewData", "AmazonElectronicsReader.py")
+        print("Percorso del dataset:", original_data_path)
 
         # Se la cartella di dati pre-split non esiste, la crea
         if not os.path.exists(pre_splitted_path):
@@ -43,15 +44,16 @@ class AmazonElectronicsReader(_AmazonReviewDataReader):
         dataIO = DataIO(pre_splitted_path)
 
         try:
-
             print("AmazonElectronicsReader: Tentativo di caricare i dati pre-splittati")
-
             for attrib_name, attrib_object in dataIO.load_data(pre_splitted_filename).items():
                 self.__setattr__(attrib_name, attrib_object)
 
         except FileNotFoundError:
-
             print("AmazonElectronicsReader: Dati pre-splittati non trovati, costruendo nuovi dati")
+        except (OSError, IOError) as e:
+            print(f"Errore nell'accesso ai file pre-splittati: {e}")
+        except Exception as e:
+            print(f"Errore imprevisto nel caricamento dei dati: {e}")
 
             print("AmazonElectronicsReader: Caricamento del URM")
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from Conferences.RecSysProject.CODIGEM_our_interface.AEReader import AEReader
 from Data_manager.AmazonReviewData.AmazonElectronicsReader import AmazonElectronicsReader
 from Data_manager.Movielens.Movielens10MReader import Movielens10MReader
 from HyperparameterTuning.SearchSingleCase import SearchSingleCase
@@ -48,7 +49,7 @@ def read_data_split_and_search(dataset_name,
     elif dataset_name == "movielens20m":
         dataset = Movielens20MReader(data_folder_path)
     elif dataset_name == "amazonElectronics":
-        dataset = AmazonElectronicsReader(data_folder_path)
+        dataset = AEReader(data_folder_path)
 
     else:
         print("Dataset name not supported, current is {}".format(dataset_name))
@@ -56,6 +57,12 @@ def read_data_split_and_search(dataset_name,
 
 
     print ('Current dataset is: {}'.format(dataset_name))
+    if 'URM_train' in dataset.URM_DICT:
+        URM_train = dataset.URM_DICT['URM_train'].copy()
+    else:
+        print("La chiave 'URM_train' non è presente in URM_DICT.")
+        print("Chiavi disponibili in URM_DICT:", dataset.URM_DICT.keys())
+        return
 
     URM_train = dataset.URM_DICT["URM_train"].copy()
     URM_validation = dataset.URM_DICT["URM_validation"].copy()
@@ -326,7 +333,7 @@ if __name__ == '__main__':
 
     # TODO: Replace with dataset names, for a runnable example of this pipeline use only movielens20m
     #dataset_list = ["citeulike", "movielens20m"]
-    dataset_list = ["movielens20m"]
+    dataset_list = ["amazonElectronics"]
 
     for dataset_name in dataset_list:
         read_data_split_and_search(dataset_name,
