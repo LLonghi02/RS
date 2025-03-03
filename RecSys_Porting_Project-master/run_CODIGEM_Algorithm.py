@@ -27,7 +27,6 @@ from HyperparameterTuning.functions_for_parallel_model import _unpack_tuple_and_
 
 
 
-
 def read_data_split_and_search(dataset_name,
                                flag_baselines_tune=False,
                                flag_model_default=False,
@@ -60,6 +59,8 @@ def read_data_split_and_search(dataset_name,
     if 'URM_train' in dataset.URM_DICT:
         URM_train = dataset.URM_DICT['URM_train'].copy()
     else:
+        print(dataset_name)
+        print(data_folder_path)
         print("La chiave 'URM_train' non è presente in URM_DICT.")
         print("Chiavi disponibili in URM_DICT:", dataset.URM_DICT.keys())
         return
@@ -334,6 +335,7 @@ if __name__ == '__main__':
     # TODO: Replace with dataset names, for a runnable example of this pipeline use only movielens20m
     #dataset_list = ["citeulike", "movielens20m"]
     dataset_list = ["amazonElectronics"]
+    #dataset_list = ["movielens20m"]
 
     for dataset_name in dataset_list:
         read_data_split_and_search(dataset_name,

@@ -33,15 +33,31 @@ class AEReader(_AmazonReviewDataReader):
         pre_splitted_path += "data_split/"
         pre_splitted_filename = "splitted_data_"
 
-        original_data_path = os.path.join("C:", "Users", "laral", "Desktop", "RS", "RecSys_Porting_Project-master",
-                                          "Data_manager", "AmazonReviewData", "AmazonElectronicsReader.py")
-        print("Percorso del dataset:", original_data_path)
+        #original_data_path = os.path.join("C:", "Users", "laral", "Desktop", "RS", "RecSys_Porting_Project-master",
+                                          #"Data_manager", "AmazonReviewData", "AmazonElectronicsReader.py")
+
+        # original_data_path = os.path.join("/Users", "michelebalena", "Documents", "GitHub", "RS",
+        #                                   "RecSys_Porting_Project-master", "Data_manager",
+        #                                   "AmazonReviewData", "AmazonElectronicsReader.py")
+        # print("Percorso del dataset:", original_data_path)
+
+        import os
+
+        original_data_path = os.path.join("/Users", "michelebalena", "Documents", "GitHub", "RS",
+                                          "RecSys_Porting_Project-master", "Data_manager",
+                                          "AmazonReviewData", "AmazonElectronicsReader.py")
+
+        if not os.path.exists(original_data_path):
+            print(f"Errore: Il file {original_data_path} non esiste.")
+            return
+
 
         # Se la cartella di dati pre-split non esiste, la crea
         if not os.path.exists(pre_splitted_path):
             os.makedirs(pre_splitted_path)
 
         dataIO = DataIO(pre_splitted_path)
+        print(dataIO)
 
         try:
             print("AmazonElectronicsReader: Tentativo di caricare i dati pre-splittati")
@@ -120,3 +136,5 @@ class AEReader(_AmazonReviewDataReader):
     def _load_from_original_file(self):
         # Metodo per il caricamento dei dati originali (già implementato in _AmazonReviewDataReader)
         pass
+
+

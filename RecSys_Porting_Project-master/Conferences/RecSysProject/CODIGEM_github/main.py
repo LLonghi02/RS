@@ -11,10 +11,15 @@ from data_processing import DataLoader
 # Directories and Paths
 
 #path = "PATH TO DATASET" # Path to the dataset
-path = r"C:\Users\laral\Desktop\RS\RecSys_Porting_Project-master\Conferences\RecSysProject\CODIGEM_our_interface\AEReader.py"
+
+#path = r"C:\Users\laral\Desktop\RS\RecSys_Porting_Project-master\Conferences\RecSysProject\CODIGEM_our_interface\AEReader.py"
+path = "/Users/michelebalena/Desktop/RS/RecSys_Porting_Project-master/Conferences/RecSysProject/CODIGEM_our_interface/AEReader.py"
 
 #final_results_dir = "PATH TO SAVE MODEL RESULTS" # Directory to save the model results
-final_results_dir = r"C:\Users\laral\Desktop\RS\RecSys_Porting_Project-master\Conferences\RecSysProject\CODIGEM_github"
+
+#final_results_dir = r"C:\Users\laral\Desktop\RS\RecSys_Porting_Project-master\Conferences\RecSysProject\CODIGEM_github"
+final_results_dir = "/Users/michelebalena/Desktop/RS/RecSys_Porting_Project-master/Conferences/RecSysProject/CODIGEM_github"
+
 
 pro_dir = os.path.join(path, 'pro_sg')
 
