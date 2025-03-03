@@ -334,8 +334,8 @@ if __name__ == '__main__':
 
     # TODO: Replace with dataset names, for a runnable example of this pipeline use only movielens20m
     #dataset_list = ["citeulike", "movielens20m"]
-    dataset_list = ["amazonElectronics"]
-    #dataset_list = ["movielens20m"]
+    #dataset_list = ["amazonElectronics"]
+    dataset_list = ["movielens20m"]
 
     for dataset_name in dataset_list:
         read_data_split_and_search(dataset_name,

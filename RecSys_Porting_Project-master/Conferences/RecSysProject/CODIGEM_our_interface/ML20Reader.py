@@ -14,21 +14,18 @@ import numpy as np
 from Recommenders.DataIO import DataIO
 from Recommenders.Recommender_utils import reshapeSparse
 
-class AEReader(_AmazonReviewDataReader):
+class Movielens20MReader(DataReader):
 
-    URM_DICT = {}
-    ICM_DICT = {}
-    UCM_DICT = {}
+    DATASET_URL = "https://files.grouplens.org/datasets/movielens/ml-20m.zip"
+    DATASET_SUBFOLDER = "Movielens20M/"
+    AVAILABLE_ICM = ["ICM_all", "ICM_genres", "ICM_tags", "ICM_year"]
+    AVAILABLE_URM = ["URM_all", "URM_timestamp"]
 
-    DATASET_URL_RATING = "https://snap.stanford.edu/data/amazon/productGraph/categoryFiles/ratings_Electronics.csv"
-    DATASET_URL_METADATA = "https://snap.stanford.edu/data/amazon/productGraph/categoryFiles/meta_Electronics.json.gz"
-
-    DATASET_SUBFOLDER = "AmazonReviewData/AmazonElectronics/"
-    AVAILABLE_ICM = ["ICM_metadata"]
+    IS_IMPLICIT = False
 
     def __init__(self, pre_splitted_path):
 
-        super(AEReader, self).__init__()
+        super(ML20Reader, self).__init__()
 
         pre_splitted_path += "data_split/"
         pre_splitted_filename = "splitted_data_"
@@ -41,11 +38,13 @@ class AEReader(_AmazonReviewDataReader):
         #                                   "AmazonReviewData", "AmazonElectronicsReader.py")
         # print("Percorso del dataset:", original_data_path)
 
-        import os
-
-        original_data_path = os.path.join("/Users", "michelebalena", "Documents", "GitHub", "RS",
-                                          "RecSys_Porting_Project-master", "Data_manager",
-                                          "AmazonReviewData", "AmazonElectronicsReader.py")
+        # import os
+        #
+        # original_data_path = os.path.join("/Users", "michelebalena", "Documents", "GitHub", "RS",
+        #                                   "RecSys_Porting_Project-master", "Data_manager",
+        #                                   "Movielens", "AmazonElectronicsReader.py")
+        original_data_path = os.path.join(os.path.dirname(__file__), '..', "..",
+                                          "RecSys_Porting_Project-master/Data_manager/Movielens")
 
         if not os.path.exists(original_data_path):
             print(f"Errore: Il file {original_data_path} non esiste.")
@@ -61,31 +60,18 @@ class AEReader(_AmazonReviewDataReader):
         print("Dati caricati:", loaded_data)  # Controlla cosa viene caricato
 
         try:
-            print("AmazonElectronicsReader: Tentativo di caricare i dati pre-splittati")
+            print("ML20Reader: Tentativo di caricare i dati pre-splittati")
             for attrib_name, attrib_object in dataIO.load_data(pre_splitted_filename).items():
                 self.__setattr__(attrib_name, attrib_object)
 
         except FileNotFoundError:
-            print("AmazonElectronicsReader: Dati pre-splittati non trovati, costruendo nuovi dati")
+            print("ML20Reader: Dati pre-splittati non trovati, costruendo nuovi dati")
         except (OSError, IOError) as e:
             print(f"Errore nell'accesso ai file pre-splittati: {e}")
         except Exception as e:
             print(f"Errore imprevisto nel caricamento dei dati: {e}")
 
-            print("AmazonElectronicsReader: Caricamento del URM")
-
-            metadata_path = self._get_ICM_metadata_path(data_folder=original_data_path,
-                                                       compressed_file_name="meta_Electronics.json.gz",
-                                                       decompressed_file_name="meta_Electronics.json",
-                                                       file_url=self.DATASET_URL_METADATA)
-
-            URM_path = self._get_URM_review_path(data_folder=original_data_path,
-                                                 file_name="ratings_Electronics.csv",
-                                                 file_url=self.DATASET_URL_RATING)
-
-            loaded_dataset = self._load_from_original_file_all_amazon_datasets(URM_path,
-                                                                               metadata_path=metadata_path,
-                                                                               reviews_path=None)
+            print("ML20Reader: Caricamento del URM")
 
             URM_train_builder = loaded_dataset['URM_train']
             URM_test_builder = loaded_dataset['URM_test']
@@ -132,10 +118,61 @@ class AEReader(_AmazonReviewDataReader):
 
             dataIO.save_data(pre_splitted_filename, data_dict_to_save=data_dict_to_save)
 
-            print("AmazonElectronicsReader: Caricamento completato")
+            print("ML20Reader: Caricamento completato")
+
+    def _get_dataset_name_root(self):
+        return self.DATASET_SUBFOLDER
 
     def _load_from_original_file(self):
-        # Metodo per il caricamento dei dati originali (già implementato in _AmazonReviewDataReader)
-        pass
+        # Load data from original
+
+        zipFile_path = self.DATASET_SPLIT_ROOT_FOLDER + self.DATASET_SUBFOLDER
+
+        try:
+
+            dataFile = zipfile.ZipFile(zipFile_path + "ml-20m.zip")
+
+        except (FileNotFoundError, zipfile.BadZipFile):
+
+            self._print("Unable to find data zip file. Downloading...")
+
+            download_from_URL(self.DATASET_URL, zipFile_path, "ml-20m.zip")
+
+            dataFile = zipfile.ZipFile(zipFile_path + "ml-20m.zip")
+
+        ICM_genre_path = dataFile.extract("ml-20m/movies.csv", path=zipFile_path + "decompressed/")
+        ICM_tags_path = dataFile.extract("ml-20m/tags.csv", path=zipFile_path + "decompressed/")
+        URM_path = dataFile.extract("ml-20m/ratings.csv", path=zipFile_path + "decompressed/")
+
+        self._print("Loading Item Features Genres")
+        ICM_genres_dataframe, ICM_years_dataframe = _loadICM_genres_years(ICM_genre_path, header=0, separator=',',
+                                                                          genresSeparator="|")
+
+        self._print("Loading Item Features Tags")
+        ICM_tags_dataframe = _loadICM_tags(ICM_tags_path, header=0, separator=',')
+
+        ICM_all_dataframe = pd.concat([ICM_genres_dataframe, ICM_tags_dataframe])
+
+        self._print("Loading Interactions")
+        URM_all_dataframe, URM_timestamp_dataframe = _loadURM(URM_path, header=0, separator=',')
+
+        dataset_manager = DatasetMapperManager()
+        dataset_manager.add_URM(URM_all_dataframe, "URM_all")
+        dataset_manager.add_URM(URM_timestamp_dataframe, "URM_timestamp")
+        dataset_manager.add_ICM(ICM_genres_dataframe, "ICM_genres")
+        dataset_manager.add_ICM(ICM_years_dataframe, "ICM_year")
+        dataset_manager.add_ICM(ICM_tags_dataframe, "ICM_tags")
+        dataset_manager.add_ICM(ICM_all_dataframe, "ICM_all")
+
+        loaded_dataset = dataset_manager.generate_Dataset(dataset_name=self._get_dataset_name(),
+                                                          is_implicit=self.IS_IMPLICIT)
+
+        self._print("Cleaning Temporary Files")
+
+        shutil.rmtree(zipFile_path + "decompressed", ignore_errors=True)
+
+        self._print("saving URM and ICM")
+
+        return loaded_dataset
 
 

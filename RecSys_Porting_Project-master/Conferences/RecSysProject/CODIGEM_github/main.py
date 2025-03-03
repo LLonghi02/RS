@@ -12,8 +12,8 @@ from data_processing import DataLoader
 
 #path = "PATH TO DATASET" # Path to the dataset
 
-#path = r"C:\Users\laral\Desktop\RS\RecSys_Porting_Project-master\Conferences\RecSysProject\CODIGEM_our_interface\AEReader.py"
-path = "/Users/michelebalena/Desktop/RS/RecSys_Porting_Project-master/Conferences/RecSysProject/CODIGEM_our_interface/AEReader.py"
+#path = r"C:\Users\laral\Desktop\RS\RecSys_Porting_Project-master\Conferences\RecSysProject\CODIGEM_our_interface\ML20Reader.py"
+path = "/Users/michelebalena/Desktop/RS/RecSys_Porting_Project-master/Conferences/RecSysProject/CODIGEM_our_interface/ML20Reader.py"
 
 #final_results_dir = "PATH TO SAVE MODEL RESULTS" # Directory to save the model results
 

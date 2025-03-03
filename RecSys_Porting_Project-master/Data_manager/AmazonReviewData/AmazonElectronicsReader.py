@@ -7,7 +7,6 @@ Created on 10/01/18
 """
 
 
-
 from Data_manager.AmazonReviewData._AmazonReviewDataReader import _AmazonReviewDataReader
 
 
