@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from Conferences.RecSysProject.CODIGEM_our_interface.AEReader import AEReader
+from Conferences.RecSysProject.CODIGEM_our_interface.ML20Reader import ML20MReader
 from Data_manager.AmazonReviewData.AmazonElectronicsReader import AmazonElectronicsReader
 from Data_manager.Movielens.Movielens10MReader import Movielens10MReader
 from HyperparameterTuning.SearchSingleCase import SearchSingleCase
@@ -13,9 +14,9 @@ import numpy as np
 import os, traceback, argparse, multiprocessing
 
 from Conferences.CIKM.ExampleAlgorithm_our_interface.ExampleDatasetProvided.CiteulikeReader import CiteulikeReader
-from Conferences.CIKM.ExampleAlgorithm_our_interface.ExampleDatasetPublic.Movielens20MReader import Movielens20MReader
+#from Conferences.CIKM.ExampleAlgorithm_our_interface.ExampleDatasetPublic.Movielens20MReader import Movielens20MReader
 #from Conferences.CIKM.ExampleAlgorithm_our_interface.Example_RecommenderWrapper import Example_RecommenderWrapper
-from Conferences.RecSysProject.CODIGEM_our_interface.AEWrapper import AEWrapper
+from Conferences.RecSysProject.CODIGEM_our_interface.ML20Wrapper import ML20Wrapper
 
 
 
@@ -35,7 +36,7 @@ def read_data_split_and_search(dataset_name,
 
     result_folder_path = "result_experiments/{}/{}_{}/".format(CONFERENCE_NAME, ALGORITHM_NAME, dataset_name)
     data_folder_path = result_folder_path + "data/"
-    model_folder_path = result_folder_path + "models/"
+    model_folder_path = result_folder_path + "data/data_split"
 
     # TODO: Replace with dataset name and relative DataReader
     #  The two datareaders correspond to two examples, CiteULike as an example of dataset provided in the original repository of the paper you are attempting to reproduce
@@ -46,7 +47,7 @@ def read_data_split_and_search(dataset_name,
         dataset = Movielens10MReader(data_folder_path)
 
     elif dataset_name == "movielens20m":
-        dataset = Movielens20MReader(data_folder_path)
+        dataset = ML20MReader(data_folder_path)
     elif dataset_name == "amazonElectronics":
         dataset = AEReader(data_folder_path)
 
@@ -156,7 +157,7 @@ def read_data_split_and_search(dataset_name,
 
 
             # Fit the DL model, select the optimal number of epochs and save the result
-            hyperparameterSearch = SearchSingleCase(AEWrapper,
+            hyperparameterSearch = SearchSingleCase(ML20Wrapper,
                                                    evaluator_validation=evaluator_validation,
                                                    evaluator_test=evaluator_test)
 
@@ -179,7 +180,7 @@ def read_data_split_and_search(dataset_name,
                                    metric_to_optimize = metric_to_optimize,
                                    cutoff_to_optimize = cutoff_to_optimize,
                                    output_folder_path = model_folder_path,
-                                   output_file_name_root = AEWrapper.RECOMMENDER_NAME,
+                                   output_file_name_root = ML20Wrapper.RECOMMENDER_NAME,
                                    resume_from_saved = resume_from_saved,
                                    save_model = "best",
                                    evaluate_on_test = "best",
@@ -189,7 +190,7 @@ def read_data_split_and_search(dataset_name,
 
         except Exception as e:
 
-            print("On recommender {} Exception {}".format(AEWrapper, str(e)))
+            print("On recommender {} Exception {}".format(ML20Wrapper, str(e)))
             traceback.print_exc()
 
 
@@ -318,7 +319,6 @@ if __name__ == '__main__':
     ALGORITHM_NAME = "ALGORITHM_NAME"
     CONFERENCE_NAME = "KDD"
 
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--baseline_tune',        help="Baseline hyperparameter search", type= bool, default = False)
     parser.add_argument('-m', '--model_default',        help="Train the model with the hyperparameters described in the paper", type= bool, default = False)
@@ -343,4 +343,5 @@ if __name__ == '__main__':
                                    flag_model_default = input_flags.model_default,
                                    flag_print_results = input_flags.print_results,
                                    )
+    print ("ho finito")
 

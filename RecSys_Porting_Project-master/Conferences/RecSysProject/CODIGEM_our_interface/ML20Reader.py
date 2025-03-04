@@ -3,8 +3,16 @@
 
 
 from Data_manager.AmazonReviewData._AmazonReviewDataReader import _AmazonReviewDataReader
+from Data_manager.DataReader import DataReader
+from Data_manager.DataReader_utils import download_from_URL
+from Data_manager.DatasetMapperManager import DatasetMapperManager
+from Data_manager.Movielens._utils_movielens_parser import _loadICM_genres_years, _loadICM_tags, _loadURM
 from Data_manager.split_functions.split_train_validation_random_holdout import split_train_in_two_percentage_global_sample
 from Data_manager.IncrementalSparseMatrix import IncrementalSparseMatrix
+
+import zipfile
+import pandas as pd
+import shutil
 
 import scipy.io
 import scipy.sparse as sps
@@ -14,7 +22,7 @@ import numpy as np
 from Recommenders.DataIO import DataIO
 from Recommenders.Recommender_utils import reshapeSparse
 
-class Movielens20MReader(DataReader):
+class ML20MReader(DataReader):
 
     DATASET_URL = "https://files.grouplens.org/datasets/movielens/ml-20m.zip"
     DATASET_SUBFOLDER = "Movielens20M/"
@@ -25,24 +33,11 @@ class Movielens20MReader(DataReader):
 
     def __init__(self, pre_splitted_path):
 
-        super(ML20Reader, self).__init__()
+        super(ML20MReader, self).__init__()
 
         pre_splitted_path += "data_split/"
         pre_splitted_filename = "splitted_data_"
 
-        #original_data_path = os.path.join("C:", "Users", "laral", "Desktop", "RS", "RecSys_Porting_Project-master",
-                                          #"Data_manager", "AmazonReviewData", "AmazonElectronicsReader.py")
-
-        # original_data_path = os.path.join("/Users", "michelebalena", "Documents", "GitHub", "RS",
-        #                                   "RecSys_Porting_Project-master", "Data_manager",
-        #                                   "AmazonReviewData", "AmazonElectronicsReader.py")
-        # print("Percorso del dataset:", original_data_path)
-
-        # import os
-        #
-        # original_data_path = os.path.join("/Users", "michelebalena", "Documents", "GitHub", "RS",
-        #                                   "RecSys_Porting_Project-master", "Data_manager",
-        #                                   "Movielens", "AmazonElectronicsReader.py")
         original_data_path = os.path.join(os.path.dirname(__file__), '..', "..",
                                           "RecSys_Porting_Project-master/Data_manager/Movielens")
 
@@ -73,11 +68,11 @@ class Movielens20MReader(DataReader):
 
             print("ML20Reader: Caricamento del URM")
 
-            URM_train_builder = loaded_dataset['URM_train']
-            URM_test_builder = loaded_dataset['URM_test']
+            URM_train_builder = loaded_data['URM_train']
+            URM_test_builder = loaded_data['URM_test']
 
             # Caricamento della matrice ICM per le caratteristiche degli articoli
-            ICM_metadata = scipy.io.loadmat(metadata_path)['X']
+            ICM_metadata = scipy.io.loadmat()['X']
             ICM_metadata = sps.csr_matrix(ICM_metadata)
 
             # Matrimonio booleano per la matrice ICM
@@ -172,7 +167,7 @@ class Movielens20MReader(DataReader):
         shutil.rmtree(zipFile_path + "decompressed", ignore_errors=True)
 
         self._print("saving URM and ICM")
-
+        print ("ho fatto il reading")
         return loaded_dataset
 
 

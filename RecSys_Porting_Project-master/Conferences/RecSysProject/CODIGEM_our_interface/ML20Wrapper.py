@@ -5,13 +5,14 @@ Created on 18/12/18
 
 @author: Maurizio Ferrari Dacrema
 """
-
-
+from Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs import DDGM
 from Recommenders.BaseCBFRecommender import BaseItemCBFRecommender
 from Recommenders.BaseMatrixFactorizationRecommender import BaseMatrixFactorizationRecommender
 from Recommenders.Incremental_Training_Early_Stopping import Incremental_Training_Early_Stopping
 from Recommenders.BaseTempFolder import BaseTempFolder
 from Recommenders.DataIO import DataIO
+
+import logging
 
 import numpy as np
 import tensorflow as tf
@@ -23,14 +24,14 @@ from Conferences.CIKM.ExampleAlgorithm_github.main import get_model
 
 
 # TODO replace the recommender class name with the correct one-OK
-class AEWrapper(BaseItemCBFRecommender, Incremental_Training_Early_Stopping, BaseTempFolder):
+class ML20Wrapper(BaseItemCBFRecommender, Incremental_Training_Early_Stopping, BaseTempFolder):
 
     # TODO replace the recommender name with the correct one-OK
-    RECOMMENDER_NAME = "AEWrapper"
+    RECOMMENDER_NAME = "ML20Wrapper"
 
     def __init__(self, URM_train, ICM_train):
         # TODO remove ICM_train and inheritance from BaseItemCBFRecommender if content features are not needed
-        super(AEWrapper, self).__init__(URM_train, ICM_train)
+        super(ML20Wrapper, self).__init__(URM_train, ICM_train)
 
         # This is used in _compute_item_score
         self._item_indices = np.arange(0, self.n_items, dtype=np.int)
@@ -110,7 +111,7 @@ class AEWrapper(BaseItemCBFRecommender, Incremental_Training_Early_Stopping, Bas
             print_step=10,
             verbose=False
         )"""
-        self.model = CODIGEM_Model(
+        self.model = DDGM(
             num_users=self.n_users,
             num_items=self.n_items,
             num_factors=self.num_factors,
@@ -153,7 +154,7 @@ class AEWrapper(BaseItemCBFRecommender, Incremental_Training_Early_Stopping, Bas
         # The following code contains various operations needed by another wrapper
 
 
-        self._params = Params()
+        #self._params = Params()
         self._params.lambda_u = lambda_u
         self._params.lambda_v = lambda_v
         self._params.lambda_r = lambda_r
