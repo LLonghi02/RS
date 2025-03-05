@@ -38,7 +38,7 @@ def read_data_split_and_search(dataset_name,
 
     result_folder_path = "result_experiments/{}/{}_{}/".format(CONFERENCE_NAME, ALGORITHM_NAME, dataset_name)
     data_folder_path = result_folder_path + "data/"
-    model_folder_path = result_folder_path + "models/"
+    model_folder_path = result_folder_path + "data/data_split/"
 
     # TODO: Replace with dataset name and relative DataReader
     #  The two datareaders correspond to two examples, CiteULike as an example of dataset provided in the original repository of the paper you are attempting to reproduce
@@ -308,8 +308,8 @@ def read_data_split_and_search(dataset_name,
 if __name__ == '__main__':
 
     # TODO: Replace with algorithm and conference name
-    ALGORITHM_NAME = "ALGORITHM_NAME"
-    CONFERENCE_NAME = "KDD"
+    ALGORITHM_NAME = "EXAMPLE"
+    CONFERENCE_NAME = "prova"
 
 
     parser = argparse.ArgumentParser()

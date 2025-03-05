@@ -45,9 +45,8 @@ def read_data_split_and_search(dataset_name,
 
     if dataset_name == "movielens10m":
         dataset = Movielens10MReader(data_folder_path)
-
     elif dataset_name == "movielens20m":
-        dataset = ML20MReader(data_folder_path)
+        mlReader = ML20MReader(data_folder_path)
     elif dataset_name == "amazonElectronics":
         dataset = AEReader(data_folder_path)
 
@@ -55,20 +54,23 @@ def read_data_split_and_search(dataset_name,
         print("Dataset name not supported, current is {}".format(dataset_name))
         return
 
+    # Dopo aver inizializzato dataset in read_data_split_and_search()
+    #print("Attributi disponibili in dataset:", dir(dataset))  # Debug: Mostra tutti gli attributi dell'oggetto dataset
+
+    #if not hasattr(dataset, "AVAILABLE_URM"):  # Controlla se URM_DICT esiste
+    #    print(f"Errore: 'AVAILABLE_URM' non è presente in {dataset_name}.")
+    #    return
+
+    #print("Chiavi disponibili in URM_DICT:", dataset.AVAILABLE_URM.keys())  # Mostra le chiavi se URM_DICT esiste
+
 
     print ('Current dataset is: {}'.format(dataset_name))
-    if 'URM_train' in dataset.URM_DICT:
-        URM_train = dataset.URM_DICT['URM_train'].copy()
-    else:
-        print(dataset_name)
-        print(data_folder_path)
-        print("La chiave 'URM_train' non è presente in URM_DICT.")
-        print("Chiavi disponibili in URM_DICT:", dataset.URM_DICT.keys())
-        return
-
-    URM_train = dataset.URM_DICT["URM_train"].copy()
-    URM_validation = dataset.URM_DICT["URM_validation"].copy()
-    URM_test = dataset.URM_DICT["URM_test"].copy()
+    #print(dataset.AVAILABLE_URM)
+    dataset = mlReader._load_from_original_file()
+    print(dataset.AVAILABLE_URM)
+    URM_train = dataset.AVAILABLE_URM["URM_train"].copy()
+    URM_validation = dataset.AVAILABLE_URM["URM_validation"].copy()
+    URM_test = dataset.AVAILABLE_URM["URM_test"].copy()
 
     ICM_DICT = dataset.ICM_DICT
     UCM_DICT = dataset.UCM_DICT

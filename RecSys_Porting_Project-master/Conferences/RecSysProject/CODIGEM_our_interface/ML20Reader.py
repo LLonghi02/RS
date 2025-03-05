@@ -28,6 +28,7 @@ class ML20MReader(DataReader):
     DATASET_SUBFOLDER = "Movielens20M/"
     AVAILABLE_ICM = ["ICM_all", "ICM_genres", "ICM_tags", "ICM_year"]
     AVAILABLE_URM = ["URM_all", "URM_timestamp"]
+    DATASET_SPLIT_ROOT_FOLDER = "../../../Data_manager_split_datasets/"
 
     IS_IMPLICIT = False
 
@@ -37,14 +38,6 @@ class ML20MReader(DataReader):
 
         pre_splitted_path += "data_split/"
         pre_splitted_filename = "splitted_data_"
-
-        original_data_path = os.path.join(os.path.dirname(__file__), '..', "..",
-                                          "RecSys_Porting_Project-master/Data_manager/Movielens")
-
-        if not os.path.exists(original_data_path):
-            print(f"Errore: Il file {original_data_path} non esiste.")
-            return
-
 
         # Se la cartella di dati pre-split non esiste, la crea
         if not os.path.exists(pre_splitted_path):
@@ -56,8 +49,10 @@ class ML20MReader(DataReader):
 
         try:
             print("ML20Reader: Tentativo di caricare i dati pre-splittati")
+            print("There are " + str(len(list(dataIO.load_data(pre_splitted_filename).items()))) + " to be done")
             for attrib_name, attrib_object in dataIO.load_data(pre_splitted_filename).items():
                 self.__setattr__(attrib_name, attrib_object)
+                print("ho fatto il mio work")
 
         except FileNotFoundError:
             print("ML20Reader: Dati pre-splittati non trovati, costruendo nuovi dati")
@@ -65,11 +60,10 @@ class ML20MReader(DataReader):
             print(f"Errore nell'accesso ai file pre-splittati: {e}")
         except Exception as e:
             print(f"Errore imprevisto nel caricamento dei dati: {e}")
-
             print("ML20Reader: Caricamento del URM")
 
-            URM_train_builder = loaded_data['URM_train']
-            URM_test_builder = loaded_data['URM_test']
+            URM_train_builder = loaded_data["URM_DICT"]['URM_train']
+            URM_test_builder = loaded_data["URM_DICT"]['URM_test']
 
             # Caricamento della matrice ICM per le caratteristiche degli articoli
             ICM_metadata = scipy.io.loadmat()['X']
@@ -124,7 +118,6 @@ class ML20MReader(DataReader):
         zipFile_path = self.DATASET_SPLIT_ROOT_FOLDER + self.DATASET_SUBFOLDER
 
         try:
-
             dataFile = zipfile.ZipFile(zipFile_path + "ml-20m.zip")
 
         except (FileNotFoundError, zipfile.BadZipFile):
