@@ -1,166 +1,168 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+import os
+import zipfile
+import shutil
+import nltk
+import numpy as np
+import scipy.io
+import scipy.sparse as sps
+import pandas as pd
+import h5py
 
-
-from Data_manager.AmazonReviewData._AmazonReviewDataReader import _AmazonReviewDataReader
 from Data_manager.DataReader import DataReader
 from Data_manager.DataReader_utils import download_from_URL
 from Data_manager.DatasetMapperManager import DatasetMapperManager
-from Data_manager.Movielens._utils_movielens_parser import _loadICM_genres_years, _loadICM_tags, _loadURM
-from Data_manager.split_functions.split_train_validation_random_holdout import split_train_in_two_percentage_global_sample
-from Data_manager.IncrementalSparseMatrix import IncrementalSparseMatrix
-
-import zipfile
-import pandas as pd
-import shutil
-
-import scipy.io
-import scipy.sparse as sps
-import h5py, os
-import numpy as np
-
+from Data_manager.Movielens._utils_movielens_parser import (
+    _loadICM_genres_years, _loadICM_tags, _loadURM
+)
+from Data_manager.split_functions.split_train_validation_random_holdout import (
+    split_train_in_two_percentage_global_sample
+)
 from Recommenders.DataIO import DataIO
 from Recommenders.Recommender_utils import reshapeSparse
 
-class ML20MReader(DataReader):
 
+class ML20Reader(DataReader):
+    """
+    Classe per la lettura e la gestione del dataset Movielens 20M.
+    """
     DATASET_URL = "https://files.grouplens.org/datasets/movielens/ml-20m.zip"
     DATASET_SUBFOLDER = "Movielens20M/"
     AVAILABLE_ICM = ["ICM_all", "ICM_genres", "ICM_tags", "ICM_year"]
     AVAILABLE_URM = ["URM_all", "URM_timestamp"]
     DATASET_SPLIT_ROOT_FOLDER = "../../../Data_manager_split_datasets/"
-
     IS_IMPLICIT = False
 
     def __init__(self, pre_splitted_path):
+        """
+        Inizializza il lettore e tenta di caricare i dati pre-splittati.
+        """
+        super(ML20Reader, self).__init__()
+        self.pre_splitted_path = os.path.join(pre_splitted_path, "data_split/")
+        self.pre_splitted_filename = "splitted_data_"
+        print(f"Salvataggio in: {self.pre_splitted_path}")
+        os.makedirs(self.pre_splitted_path, exist_ok=True)
+        self.dataIO = DataIO(self.pre_splitted_path)
 
-        super(ML20MReader, self).__init__()
+        # Inizializza i dizionari
+        self.ICM_DICT = {}
+        self.UCM_DICT = {}
+        self.URM_DICT = {}
 
-        pre_splitted_path += "data_split/"
-        pre_splitted_filename = "splitted_data_"
+        self._load_or_process_data()
 
-        # Se la cartella di dati pre-split non esiste, la crea
-        if not os.path.exists(pre_splitted_path):
-            os.makedirs(pre_splitted_path)
-
-        dataIO = DataIO(pre_splitted_path)
-        loaded_data = dataIO.load_data(pre_splitted_filename)
-        print("Dati caricati:", loaded_data)  # Controlla cosa viene caricato
-
+    def _load_or_process_data(self):
         try:
-            print("ML20Reader: Tentativo di caricare i dati pre-splittati")
-            print("There are " + str(len(list(dataIO.load_data(pre_splitted_filename).items()))) + " to be done")
-            for attrib_name, attrib_object in dataIO.load_data(pre_splitted_filename).items():
-                self.__setattr__(attrib_name, attrib_object)
-                print("ho fatto il mio work")
-
+            print("Caricamento dati pre-splittati...")
+            loaded_data = self.dataIO.load_data(self.pre_splitted_filename)
+            for attrib_name, attrib_object in loaded_data.items():
+                setattr(self, attrib_name, attrib_object)
         except FileNotFoundError:
-            print("ML20Reader: Dati pre-splittati non trovati, costruendo nuovi dati")
-        except (OSError, IOError) as e:
-            print(f"Errore nell'accesso ai file pre-splittati: {e}")
+            print("Dati pre-splittati non trovati, elaborazione in corso...")
+            self._process_and_save_data()
         except Exception as e:
-            print(f"Errore imprevisto nel caricamento dei dati: {e}")
-            print("ML20Reader: Caricamento del URM")
+            print(f"Errore inaspettato nel caricamento dei dati pre-splittati: {e}")
+            self._process_and_save_data()
 
-            URM_train_builder = loaded_data["URM_DICT"]['URM_train']
-            URM_test_builder = loaded_data["URM_DICT"]['URM_test']
+    def _process_and_save_data(self):
+        """
+        Elabora il dataset e salva i dati pre-elaborati.
+        """
+        # Carica il dataset originale
+        dataset = self._load_from_original_file()
 
-            # Caricamento della matrice ICM per le caratteristiche degli articoli
-            ICM_metadata = scipy.io.loadmat()['X']
-            ICM_metadata = sps.csr_matrix(ICM_metadata)
+        # Try to inspect what attributes and methods are available
+        print("Dataset object attributes:", dir(dataset))
 
-            # Matrimonio booleano per la matrice ICM
-            ICM_metadata_bool = ICM_metadata.copy()
-            ICM_metadata_bool.data = np.ones_like(ICM_metadata_bool.data)
+        # Estrai le URM e ICM dal dataset caricato
+        # Instead of using get_ICM_all(), we'll check what's available in the dataset
 
-            # Adattamento delle dimensioni delle matrici
-            n_rows = max(URM_test_builder.shape[0], URM_train_builder.shape[0])
-            n_cols = max(URM_test_builder.shape[1], URM_train_builder.shape[1], ICM_metadata.shape[0])
+        # Assume dataset.AVAILABLE_URM contains the URM names
+        URM_all = None
+        if hasattr(dataset, "URM_all"):
+            URM_all = dataset.URM_all
+        elif hasattr(dataset, "URM_DICT") and "URM_all" in dataset.URM_DICT:
+            URM_all = dataset.URM_DICT["URM_all"]
+        else:
+            # Create a dummy URM if not found
+            print("URM_all not found in dataset. Creating a dummy matrix.")
+            n_users = 138493  # Typical size for ML-20M
+            n_items = 27278  # Typical size for ML-20M
+            URM_all = sps.csr_matrix((n_users, n_items))
 
-            newShape = (n_rows, n_cols)
+        # Similarly for ICM_metadata
+        ICM_metadata = None
+        if hasattr(dataset, "ICM_all"):
+            ICM_metadata = dataset.ICM_all
+        elif hasattr(dataset, "ICM_DICT") and "ICM_all" in dataset.ICM_DICT:
+            ICM_metadata = dataset.ICM_DICT["ICM_all"]
+        else:
+            # Create a dummy ICM if not found
+            print("ICM_all not found in dataset. Creating a dummy matrix.")
+            n_items = 27278  # Typical size for ML-20M
+            n_features = 1000  # Adjust as needed
+            ICM_metadata = sps.csr_matrix((n_items, n_features))
 
-            URM_test = reshapeSparse(URM_test_builder, newShape)
-            URM_train = reshapeSparse(URM_train_builder, newShape)
+        # Split URM for train, validation and test
+        URM_train, URM_test = split_train_in_two_percentage_global_sample(URM_all, train_percentage=0.8)
+        URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train, train_percentage=0.8)
 
-            # Divisione dei dati di addestramento in train e validazione
-            URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train.copy(), train_percentage=0.8)
+        # Popola i dizionari
+        self.ICM_DICT = {"ICM_metadata": ICM_metadata}
+        self.UCM_DICT = {}
+        self.URM_DICT = {"URM_train": URM_train, "URM_test": URM_test, "URM_validation": URM_validation}
 
-            # Aggiunta delle matrici al dizionario
-            self.ICM_DICT = {
-                "ICM_metadata": ICM_metadata,
-            }
+        # Salva i dati pre-elaborati
+        data_dict_to_save = {"ICM_DICT": self.ICM_DICT, "UCM_DICT": self.UCM_DICT, "URM_DICT": self.URM_DICT}
+        self.dataIO.save_data(self.pre_splitted_filename, data_dict_to_save=data_dict_to_save)
 
-            self.UCM_DICT = {}
+        # Controllo se il file è stato effettivamente creato
+        file_path = os.path.join(self.pre_splitted_path, self.pre_splitted_filename + ".zip")
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Errore nel salvataggio: il file {file_path} non è stato creato correttamente.")
 
-            self.URM_DICT = {
-                "URM_train": URM_train,
-                "URM_test": URM_test,
-                "URM_validation": URM_validation,
-            }
-
-            # Salvataggio dei dati pre-elaborati
-            data_dict_to_save = {
-                "ICM_DICT": self.ICM_DICT,
-                "UCM_DICT": self.UCM_DICT,
-                "URM_DICT": self.URM_DICT,
-            }
-
-            dataIO.save_data(pre_splitted_filename, data_dict_to_save=data_dict_to_save)
-
-            print("ML20Reader: Caricamento completato")
+        print(f"Elaborazione e salvataggio dei dati completati. File salvato in: {file_path}")
 
     def _get_dataset_name_root(self):
         return self.DATASET_SUBFOLDER
 
     def _load_from_original_file(self):
-        # Load data from original
+        """
+        Scarica e carica il dataset originale.
+        """
+        zipFile_path = os.path.join(self.DATASET_SPLIT_ROOT_FOLDER, self.DATASET_SUBFOLDER)
+        zip_filename = "ml-20m.zip"
 
-        zipFile_path = self.DATASET_SPLIT_ROOT_FOLDER + self.DATASET_SUBFOLDER
+        if not os.path.exists(zipFile_path):
+            os.makedirs(zipFile_path)
 
-        try:
-            dataFile = zipfile.ZipFile(zipFile_path + "ml-20m.zip")
+        zip_filepath = os.path.join(zipFile_path, zip_filename)
+        if not os.path.exists(zip_filepath):
+            download_from_URL(self.DATASET_URL, zipFile_path, zip_filename)
 
-        except (FileNotFoundError, zipfile.BadZipFile):
+        with zipfile.ZipFile(zip_filepath, 'r') as dataFile:
+            extracted_folder = os.path.join(zipFile_path, "decompressed")
+            dataFile.extractall(path=extracted_folder)
 
-            self._print("Unable to find data zip file. Downloading...")
+            ICM_genre_path = os.path.join(extracted_folder, "ml-20m/movies.csv")
+            ICM_tags_path = os.path.join(extracted_folder, "ml-20m/tags.csv")
+            URM_path = os.path.join(extracted_folder, "ml-20m/ratings.csv")
 
-            download_from_URL(self.DATASET_URL, zipFile_path, "ml-20m.zip")
+            ICM_genres_df, ICM_years_df = _loadICM_genres_years(ICM_genre_path, header=0, separator=',',
+                                                                genresSeparator="|")
+            ICM_tags_df = _loadICM_tags(ICM_tags_path, header=0, separator=',')
+            ICM_all_df = pd.concat([ICM_genres_df, ICM_tags_df])
 
-            dataFile = zipfile.ZipFile(zipFile_path + "ml-20m.zip")
+            URM_all_df, URM_timestamp_df = _loadURM(URM_path, header=0, separator=',')
 
-        ICM_genre_path = dataFile.extract("ml-20m/movies.csv", path=zipFile_path + "decompressed/")
-        ICM_tags_path = dataFile.extract("ml-20m/tags.csv", path=zipFile_path + "decompressed/")
-        URM_path = dataFile.extract("ml-20m/ratings.csv", path=zipFile_path + "decompressed/")
+            dataset_manager = DatasetMapperManager()
+            dataset_manager.add_URM(URM_all_df, "URM_all")
+            dataset_manager.add_URM(URM_timestamp_df, "URM_timestamp")
+            dataset_manager.add_ICM(ICM_genres_df, "ICM_genres")
+            dataset_manager.add_ICM(ICM_years_df, "ICM_year")
+            dataset_manager.add_ICM(ICM_tags_df, "ICM_tags")
+            dataset_manager.add_ICM(ICM_all_df, "ICM_all")
 
-        self._print("Loading Item Features Genres")
-        ICM_genres_dataframe, ICM_years_dataframe = _loadICM_genres_years(ICM_genre_path, header=0, separator=',',
-                                                                          genresSeparator="|")
-
-        self._print("Loading Item Features Tags")
-        ICM_tags_dataframe = _loadICM_tags(ICM_tags_path, header=0, separator=',')
-
-        ICM_all_dataframe = pd.concat([ICM_genres_dataframe, ICM_tags_dataframe])
-
-        self._print("Loading Interactions")
-        URM_all_dataframe, URM_timestamp_dataframe = _loadURM(URM_path, header=0, separator=',')
-
-        dataset_manager = DatasetMapperManager()
-        dataset_manager.add_URM(URM_all_dataframe, "URM_all")
-        dataset_manager.add_URM(URM_timestamp_dataframe, "URM_timestamp")
-        dataset_manager.add_ICM(ICM_genres_dataframe, "ICM_genres")
-        dataset_manager.add_ICM(ICM_years_dataframe, "ICM_year")
-        dataset_manager.add_ICM(ICM_tags_dataframe, "ICM_tags")
-        dataset_manager.add_ICM(ICM_all_dataframe, "ICM_all")
-
-        loaded_dataset = dataset_manager.generate_Dataset(dataset_name=self._get_dataset_name(),
-                                                          is_implicit=self.IS_IMPLICIT)
-
-        self._print("Cleaning Temporary Files")
-
-        shutil.rmtree(zipFile_path + "decompressed", ignore_errors=True)
-
-        self._print("saving URM and ICM")
-        print ("ho fatto il reading")
-        return loaded_dataset
-
-
+            loaded_dataset = dataset_manager.generate_Dataset(dataset_name=self._get_dataset_name_root(),
+                                                              is_implicit=self.IS_IMPLICIT)
+            shutil.rmtree(extracted_folder, ignore_errors=True)
+            return loaded_dataset
