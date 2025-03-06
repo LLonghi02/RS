@@ -150,9 +150,21 @@ class ML20Reader(DataReader):
             ICM_genres_df, ICM_years_df = _loadICM_genres_years(ICM_genre_path, header=0, separator=',',
                                                                 genresSeparator="|")
             ICM_tags_df = _loadICM_tags(ICM_tags_path, header=0, separator=',')
+
             ICM_all_df = pd.concat([ICM_genres_df, ICM_tags_df])
 
             URM_all_df, URM_timestamp_df = _loadURM(URM_path, header=0, separator=',')
+
+            print("ICM_genres_df:")
+            print(ICM_genres_df.head())  # Verifica le prime righe di ICM_genres
+            print("ICM_years_df:")
+            print(ICM_years_df.head())  # Verifica le prime righe di ICM_years
+            print("ICM_tags_df:")
+            print(ICM_tags_df.head())  # Verifica le prime righe di ICM_tags
+            print("URM_all_df:")
+            print(URM_all_df.head())  # Verifica le prime righe di URM_all
+            print("URM_timestamp_df:")
+            print(URM_timestamp_df.head())  # Verifica le prime righe di URM_timestamp
 
             dataset_manager = DatasetMapperManager()
             dataset_manager.add_URM(URM_all_df, "URM_all")
@@ -161,6 +173,14 @@ class ML20Reader(DataReader):
             dataset_manager.add_ICM(ICM_years_df, "ICM_year")
             dataset_manager.add_ICM(ICM_tags_df, "ICM_tags")
             dataset_manager.add_ICM(ICM_all_df, "ICM_all")
+
+            # Verifica che URM e ICM siano correttamente mappati
+            print("URM_all shape:", URM_all_df.shape)
+            print("ICM_all shape:", ICM_all_df.shape)
+
+            # Controlla anche la matrice finale combinata ICM_all
+            print("ICM_all_df dopo combinazione:")
+            print(ICM_all_df.head())  # Verifica le prime righe dopo combinazione
 
             loaded_dataset = dataset_manager.generate_Dataset(dataset_name=self._get_dataset_name_root(),
                                                               is_implicit=self.IS_IMPLICIT)
