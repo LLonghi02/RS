@@ -9,7 +9,15 @@ class DataLoader():
     Load Movielens-20m dataset
     '''
     def __init__(self, path):
-        self.pro_dir = os.path.join(path, 'pro_sg')
+        # Ottieni il percorso della cartella principale del progetto
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+
+        # Definisci il nuovo percorso per salvare unique_sid.txt
+        #self.pro_dir = os.path.join(base_dir, 'Conferences', 'RecSysProject', 'CODIGEM_github')
+        self.pro_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'Data_manager_split_datasets', 'Movielens20M',
+                            'decompressed', 'ml-20m','pro_sg')
+
+        #self.pro_dir = os.path.join(path, 'pro_sg')
         self.n_items = self.load_n_items()
 
     def load_data(self, datatype='train'):
@@ -120,7 +128,7 @@ def numerize(tp, profile2id, show2id):
 
 if __name__ == '__main__':
 
-    path = os.path.join(os.path.dirname(__file__), '..','..','..', 'Data_manager', 'Movielens')
+    path = os.path.join(os.path.dirname(__file__), '..','..','..', 'Data_manager_split_datasets', 'Movielens20M','decompressed','ml-20m')
     dataset_name = "ml-20m" # Name of the dataset
     pro_dir = os.path.join(path, 'pro_sg')
     n_heldout_users = 10000
@@ -133,6 +141,7 @@ if __name__ == '__main__':
         print("Load and Preprocess " + dataset_name + " dataset")
         # Load Data
         DATA_DIR = path
+        print (path)
         raw_data = pd.read_csv(os.path.join(DATA_DIR, 'ratings.csv'), header=0)
         raw_data = raw_data[raw_data['rating'] > rating_threshold]
 
@@ -159,6 +168,7 @@ if __name__ == '__main__':
         profile2id = dict((pid, i) for (i, pid) in enumerate(unique_uid))
 
         pro_dir = os.path.join(DATA_DIR, 'pro_sg')
+        print (pro_dir)
 
         if not os.path.exists(pro_dir):
             os.makedirs(pro_dir)
@@ -166,6 +176,7 @@ if __name__ == '__main__':
         with open(os.path.join(pro_dir, 'unique_sid.txt'), 'w') as f:
             for sid in unique_sid:
                 f.write('%s\n' % sid)
+                print ("ho creato unique")
 
         vad_plays = raw_data.loc[raw_data['userId'].isin(vd_users)]
         vad_plays = vad_plays.loc[vad_plays['movieId'].isin(unique_sid)]
