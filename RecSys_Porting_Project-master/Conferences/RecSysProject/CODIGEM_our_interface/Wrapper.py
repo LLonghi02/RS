@@ -5,24 +5,30 @@ import logging
 import os
 
 from Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs import DDGM
+from Conferences.RecSysProject.CODIGEM_github.main import n_items, train_data
 from Recommenders.Incremental_Training_Early_Stopping import Incremental_Training_Early_Stopping
 from Recommenders.BaseTempFolder import BaseTempFolder
 from Recommenders.DataIO import DataIO
 
+import torch.nn as nn
+import pandas as pd
+import Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs as dg
 
-class ML20Wrapper(Incremental_Training_Early_Stopping, BaseTempFolder):
+
+#NOTA è univoco per tutti i dataset
+class CODIGEM_Wrapper(Incremental_Training_Early_Stopping, BaseTempFolder):
     """
     Wrapper per il modello di raccomandazione ML20.
     Implementa un sistema basato su deep learning utilizzando TensorFlow e il modello DDGM.
     """
 
-    RECOMMENDER_NAME = "ML20Wrapper"
+    RECOMMENDER_NAME = "CODIGEM_Wrapper"
 
     def __init__(self, URM_train):
         """
         Inizializza il wrapper con la matrice di interazioni utente-elemento (URM).
         """
-        super(ML20Wrapper, self).__init__(URM_train)
+        super(CODIGEM_Wrapper, self).__init__(URM_train)
         self.URM_train = sps.csr_matrix(URM_train)  # Convertiamo direttamente in CSR una sola volta
         self._item_indices = np.arange(self.n_items, dtype=np.int32)
         self.sess = None  # Inizializzazione della sessione TensorFlow
@@ -50,17 +56,46 @@ class ML20Wrapper(Incremental_Training_Early_Stopping, BaseTempFolder):
         tf.compat.v1.reset_default_graph()
         self.sess = tf.compat.v1.Session()
 
-        self.model = DDGM(
-            num_users=self.n_users,
-            num_items=self.n_items,
-            num_factors=self.num_factors,
-            learning_rate=self.learning_rate,
-            activation='relu',
-            hidden_layers=[200, 100]
-        )
+#TODO da cambiare va messo quello che fa in C:\Users\laral\Desktop\RS\RecSys_Porting_Project-master\Conferences\RecSysProject\CODIGEM_github\ddgm_model_rs.py
 
-    def fit(self, epochs=100, learning_rate=1e-3, num_factors=50, batch_size=128, temp_file_folder=None,
-            **earlystopping_kwargs):
+        # Parameters related to the model
+
+        num = train_data.shape[0]  # number of rows in the dataframe
+        D = n_items  # input dimension
+        M = 200  # the number of neurons in scale (s) and translation (t) nets
+        T = 3  # hyperparater to tune
+        beta = 0.0001  # hyperparater to tune #Beta = 0.0001 is best so far
+        # Initializing the model
+
+        p_dnns = nn.ModuleList([nn.Sequential(nn.Linear(D, M), nn.PReLU(),
+                                              nn.Linear(M, M), nn.PReLU(),
+                                              nn.Linear(M, M), nn.PReLU(),
+                                              nn.Linear(M, M), nn.PReLU(),
+                                              nn.Linear(M, M), nn.PReLU(),
+                                              nn.Linear(M, 2 * D)) for _ in range(T - 1)])
+
+        decoder_net = nn.Sequential(nn.Linear(D, M), nn.PReLU(),
+                                    nn.Linear(M, M), nn.PReLU(),
+                                    nn.Linear(M, M), nn.PReLU(),
+                                    nn.Linear(M, M), nn.PReLU(),
+                                    nn.Linear(M, M), nn.PReLU(),
+                                    nn.Linear(M, D), nn.Tanh())
+
+        self.model = dg.DDGM(p_dnns, decoder_net, beta=beta, T=T, D=D)
+
+
+#TODO vanno messi i valori del report li trovi in CODIGEM_github/PAPER
+    def fit(self,
+            epochs=100,
+            num_factors=64,
+            batch_size=200,
+            learning_rate=0.001,
+
+            # Parametri standard
+            temp_file_folder=None,
+            **earlystopping_kwargs
+            ):
+
         """
         Addestra il modello utilizzando early stopping.
         """

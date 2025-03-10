@@ -120,7 +120,7 @@ def numerize(tp, profile2id, show2id):
 
 if __name__ == '__main__':
 
-    path = os.path.join(os.path.dirname(__file__), '..', 'Data_manager', 'Movielens')
+    path = os.path.join(os.path.dirname(__file__), '..','..','..', 'Data_manager', 'Movielens')
     dataset_name = "ml-20m" # Name of the dataset
     pro_dir = os.path.join(path, 'pro_sg')
     n_heldout_users = 10000
