@@ -21,7 +21,7 @@ dataset_name = "ml-20m" # Name of the dataset
 
 # Load the data
 if os.path.exists(pro_dir):
-        print("Data Already Preprocessed")
+        print("Data Already Preprocessed (main)")
         loader = DataLoader(path)
         n_items = loader.load_n_items()
         train_data = loader.load_data('train')
@@ -29,9 +29,12 @@ if os.path.exists(pro_dir):
         test_data_tr, test_data_te = loader.load_data('test')
 
 else:
-    print("Data Not Preprocessed")
+    print("Data Not Preprocessed (main)")
     print("Preprocessing Data")
-    os.system('python data_processing.py')
+    # Costruisci il percorso relativo a partire da "RecSys_Porting_Project-master"
+    script_path = os.path.join(os.path.dirname(__file__), '..', '..',  "RecSysProject", "CODIGEM_github", "data_processing.py")
+    os.system(f'python "{script_path}"')
+    #os.system('python data_processing.py')
     loader = DataLoader(path)
     n_items = loader.load_n_items()
     train_data = loader.load_data('train')

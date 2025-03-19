@@ -42,9 +42,9 @@ class ML20MReader(object):
 
         except FileNotFoundError:
 
-            print("Movielens20MReader: Pre-splitted data not found, building new one")
+            print("ML20MReader: Pre-splitted data not found, building new one")
 
-            print("Movielens20MReader: loading URM")
+            print("ML20MReader: loading URM")
 
             # TODO Replace this with the publicly available dataset you need
             #  The DataManagers are in the Data_Manager folder, if the dataset is already there use that data reader

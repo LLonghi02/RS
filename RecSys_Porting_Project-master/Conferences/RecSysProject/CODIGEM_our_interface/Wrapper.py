@@ -5,7 +5,6 @@ import logging
 import os
 
 from Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs import DDGM
-from Conferences.RecSysProject.CODIGEM_github.main import n_items, train_data
 from Recommenders.Incremental_Training_Early_Stopping import Incremental_Training_Early_Stopping
 from Recommenders.BaseTempFolder import BaseTempFolder
 from Recommenders.DataIO import DataIO
@@ -15,7 +14,8 @@ import pandas as pd
 import Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs as dg
 
 
-#NOTA è univoco per tutti i dataset
+#TODO NOTA è univoco per tutti i dataset
+#TODO devi fare il train qui, mettere ciò che c'è nel main
 class CODIGEM_Wrapper(Incremental_Training_Early_Stopping, BaseTempFolder):
     """
     Wrapper per il modello di raccomandazione ML20.
@@ -23,6 +23,7 @@ class CODIGEM_Wrapper(Incremental_Training_Early_Stopping, BaseTempFolder):
     """
 
     RECOMMENDER_NAME = "CODIGEM_Wrapper"
+if __name__ == '__main__':
 
     def __init__(self, URM_train):
         """
@@ -58,10 +59,11 @@ class CODIGEM_Wrapper(Incremental_Training_Early_Stopping, BaseTempFolder):
 
 #TODO da cambiare va messo quello che fa in C:\Users\laral\Desktop\RS\RecSys_Porting_Project-master\Conferences\RecSysProject\CODIGEM_github\ddgm_model_rs.py
 
-        # Parameters related to the model
+        # Parameters related to the model      train_data=URM_train
 
-        num = train_data.shape[0]  # number of rows in the dataframe
-        D = n_items  # input dimension
+        num = self.URM_train.shape[0]  # number of rows in the dataframe
+        D=5
+        #D = n_items  # input dimension
         M = 200  # the number of neurons in scale (s) and translation (t) nets
         T = 3  # hyperparater to tune
         beta = 0.0001  # hyperparater to tune #Beta = 0.0001 is best so far
