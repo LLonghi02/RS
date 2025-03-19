@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
-from Conferences.RecSysProject.CODIGEM_our_interface.ML20Reader import ML20Reader
-from Conferences.RecSysProject.CODIGEM_our_interface.Movie20Reader import Movie20Reader
+from Conferences.RecSysProject.CODIGEM_our_interface.ML20Reader import ML20MReader
 from Conferences.RecSysProject.CODIGEM_our_interface.Wrapper import CODIGEM_Wrapper
 from HyperparameterTuning.SearchSingleCase import SearchSingleCase
 from HyperparameterTuning.SearchAbstractClass import SearchInputRecommenderArgs
@@ -36,8 +35,8 @@ def read_data_split_and_search(dataset_name,
     #  already available in this repository
 
 
-    if dataset_name == "movielens20m":
-        dataset = ML20Reader(data_folder_path)
+    if dataset_name == "ml20m":
+        dataset = ML20MReader(data_folder_path)
 
     else:
         print("Dataset name not supported, current is {}".format(dataset_name))
@@ -91,7 +90,8 @@ def read_data_split_and_search(dataset_name,
             # TODO fill this dictionary with the hyperparameters of the algorithm --OK
             article_hyperparameters = {
                 "batch_size": 200,
-                "epochs": 100,
+                #"epochs": 100,
+                "epochs": 1,
 
                 "learning_rate_embeddings": 0.001,  # Derivato dai dettagli di implementazione
                 "learning_rate_CNN": 0.001,  # Adattato al contesto di apprendimento
@@ -278,7 +278,7 @@ if __name__ == '__main__':
     KNN_similarity_to_report_list = ["cosine"]  # , "dice", "jaccard", "asymmetric", "tversky"]
 
     # TODO: Replace with dataset names, for a runnable example of this pipeline use only movielens20m
-    dataset_list = ["movielens20m"]
+    dataset_list = ["ml20m"]
 
     for dataset_name in dataset_list:
         read_data_split_and_search(dataset_name,

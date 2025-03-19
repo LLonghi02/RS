@@ -86,7 +86,7 @@ class CODIGEM_Wrapper(Incremental_Training_Early_Stopping, BaseTempFolder):
 
 #TODO vanno messi i valori del report li trovi in CODIGEM_github/PAPER
     def fit(self,
-            epochs=100,
+            epochs=1,
             num_factors=64,
             batch_size=200,
             learning_rate=0.001,
