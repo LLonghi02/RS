@@ -134,6 +134,7 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
     # These are the train instances as a list of lists
         # The following code processed the URM into the data structure the model needs to train
+        self._run_epoch(1)
         self._train_users = []
 
         self.URM_train = sps.csr_matrix(self.URM_train)

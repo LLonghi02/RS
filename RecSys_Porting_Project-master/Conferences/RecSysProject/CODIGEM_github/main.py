@@ -12,7 +12,8 @@ def run_training():
     print("Avvio del training...")
     # Directories and Paths
 
-    path = "PATH TO DATASET" # Path to the dataset
+    #path = "PATH TO DATASET" # Path to the dataset
+    path = os.path.join(os.path.dirname(__file__), '..', '..','..', "Data_manager_split_datasets", "Movielens20M","decompressed","ml-20m")
 
     final_results_dir = "PATH TO SAVE MODEL RESULTS" # Directory to save the model results
 
@@ -57,7 +58,8 @@ def run_training():
     beta = 0.0001  # hyperparater to tune #Beta = 0.0001 is best so far
 
     lr = 1e-3  # learning rate
-    num_epochs = 100  # max. number of epochs
+    #num_epochs = 100  # max. number of epochs
+    num_epochs = 1  # max. number of epochs
     max_patience = 10  # an early stopping is used, if training doesn't improve for longer than 10 epochs, it is stopped
     patience = 0
     nll_val_list = []
