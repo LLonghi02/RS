@@ -93,12 +93,12 @@ def read_data_split_and_search(dataset_name,
                 #"epochs": 100,
                 "epochs": 1,
 
-                "learning_rate_embeddings": 0.001,  # Derivato dai dettagli di implementazione
-                "learning_rate_CNN": 0.001,  # Adattato al contesto di apprendimento
+                "learning_rate_embeddings": 0.001,
+                "learning_rate_CNN": 0.001,
 
                 "epoch_verbose": 1,
-                "beta_t": 0.0001,  # Iperparametro chiave citato nel documento
-                "T": 3  # Iperparametro critico per il modello CODIGEM
+                "beta_t": 0.0001,
+                "T": 3
             }
 
             # Do not modify earlystopping
@@ -109,6 +109,14 @@ def read_data_split_and_search(dataset_name,
                                              "validation_metric": metric_to_optimize,
                                              }
 
+            # This is a simple version of the tuning code that is reported below and uses SearchSingleCase
+            # You may use this for a simpler testing
+            recommender_instance = CODIGEM_RecommenderWrapper(URM_train)
+            #
+            recommender_instance.fit(**article_hyperparameters,
+                                      **earlystopping_hyperparameters)
+
+            evaluator_test.evaluateRecommender(recommender_instance)
 
             # Fit the DL model, select the optimal number of epochs and save the result
             hyperparameterSearch = SearchSingleCase(CODIGEM_RecommenderWrapper,

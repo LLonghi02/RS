@@ -7,7 +7,7 @@ Created on 18/12/18
 """
 
 import scipy.sparse as sps
-import tensorflow
+#import tensorflow
 
 from Conferences.RecSysProject.CODIGEM_github import main
 from Conferences.RecSysProject.CODIGEM_github.main import *
@@ -26,9 +26,15 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
     # TODO replace the recommender name with the correct one
     RECOMMENDER_NAME = "CODIGEM_RecommenderWrapper"
 
-    def __init__(self, URM_train, ICM_train):
+    '''def __init__(self, URM_train, ICM_train):
         # TODO remove ICM_train and inheritance from BaseItemCBFRecommender if content features are not needed
         super(CODIGEM_RecommenderWrapper, self).__init__(URM_train, ICM_train)
+
+        # This is used in _compute_item_score
+        self._item_indices = np.arange(0, self.n_items, dtype=np.int)'''
+    def __init__(self, URM_train):
+        # TODO remove ICM_train and inheritance from BaseItemCBFRecommender if content features are not needed
+        super(CODIGEM_RecommenderWrapper, self).__init__(URM_train)
 
         # This is used in _compute_item_score
         self._item_indices = np.arange(0, self.n_items, dtype=np.int)
@@ -84,19 +90,19 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
         :return:
         """
 
-        tensorflow.reset_default_graph()
+        #tensorflow.reset_default_graph()
 
         # TODO Instantiate the model
         # Always clear the default graph if using tehsorflow
 
 
 
-        '''self.model = get_model(num_users = self.n_users,
+        self.model = get_model(num_users = self.n_users,
                           num_items = self.n_items,
                           params=self._params,
                           loss_type='cross-entropy',
                           print_step=10,
-                          verbose=False)'''
+                          verbose=False)
 
 
 
@@ -167,8 +173,8 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
         # TODO Close all sessions used for training and open a new one for the "_best_model"
         # close session tensorflow
-        self.sess.close()
-        self.sess = tensorflow.Session()
+        #self.sess.close()
+        #self.sess = tensorflow.Session()
 
         ###############################################################################
         ### This is a standard training with early stopping part, most likely you won't need to change it
@@ -241,8 +247,8 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
         self.model.save_weights(folder_path + file_name + "_weights", overwrite=True)
 
         # TODO Alternativley you may save the tensorflow model with a session
-        saver = tensorflow.train.Saver()
-        saver.save(self.sess, folder_path + file_name + "_session")
+        #saver = tensorflow.train.Saver()
+        #saver.save(self.sess, folder_path + file_name + "_session")
 
         data_dict_to_save = {
             # TODO replace this with the hyperparameters and attribute list you need to re-instantiate
@@ -286,9 +292,9 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
         # TODO If you are using tensorflow, you may instantiate a new session here
         # TODO reset the default graph to "clean" the tensorflow state
-        tensorflow.reset_default_graph()
-        saver = tensorflow.train.Saver()
-        saver.restore(self.sess, folder_path + file_name + "_session")
+        #tensorflow.reset_default_graph()
+        #saver = tensorflow.train.Saver()
+        #saver.restore(self.sess, folder_path + file_name + "_session")
 
 
         self._print("Loading complete")
