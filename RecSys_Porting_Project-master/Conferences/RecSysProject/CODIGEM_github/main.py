@@ -7,7 +7,7 @@ import Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs as dg
 import os
 from scipy import sparse
 from data_processing import DataLoader
-
+#ok
 def run_training():
     print("Avvio del training...")
     # Directories and Paths
