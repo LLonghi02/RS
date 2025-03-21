@@ -3,7 +3,7 @@
 import sys
 
 from Conferences.RecSysProject.CODIGEM_our_interface.ML20Reader import ML20MReader
-from Conferences.RecSysProject.CODIGEM_our_interface.Wrapper import CODIGEM_Wrapper
+from Conferences.RecSysProject.CODIGEM_our_interface.CODIGEM_Wrapper import CODIGEM_RecommenderWrapper
 from HyperparameterTuning.SearchSingleCase import SearchSingleCase
 from HyperparameterTuning.SearchAbstractClass import SearchInputRecommenderArgs
 from Recommenders.Recommender_import_list import *
@@ -111,7 +111,7 @@ def read_data_split_and_search(dataset_name,
 
 
             # Fit the DL model, select the optimal number of epochs and save the result
-            hyperparameterSearch = SearchSingleCase(CODIGEM_Wrapper,
+            hyperparameterSearch = SearchSingleCase(CODIGEM_RecommenderWrapper,
                                                     evaluator_validation=evaluator_validation,
                                                     evaluator_test=evaluator_test)
 
@@ -134,7 +134,7 @@ def read_data_split_and_search(dataset_name,
                                         metric_to_optimize=metric_to_optimize,
                                         cutoff_to_optimize=cutoff_to_optimize,
                                         output_folder_path=model_folder_path,
-                                        output_file_name_root= CODIGEM_Wrapper.RECOMMENDER_NAME,
+                                        output_file_name_root= CODIGEM_RecommenderWrapper.RECOMMENDER_NAME,
                                         resume_from_saved=resume_from_saved,
                                         save_model="best",
                                         evaluate_on_test="best",
@@ -144,7 +144,7 @@ def read_data_split_and_search(dataset_name,
 
         except Exception as e:
 
-            print("On recommender {} Exception {}".format(CODIGEM_Wrapper, str(e)))
+            print("On recommender {} Exception {}".format(CODIGEM_RecommenderWrapper, str(e)))
             traceback.print_exc()
 
     ################################################################################################
