@@ -10,6 +10,7 @@ import scipy.sparse as sps
 #import tensorflow
 
 from Conferences.RecSysProject.CODIGEM_github import main
+from Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs import DDGM
 from Conferences.RecSysProject.CODIGEM_github.main import *
 
 from Recommenders.BaseCBFRecommender import BaseItemCBFRecommender
@@ -65,12 +66,21 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
             user_id = user_id_array[user_index]
 
             # TODO this predict function should be replaced by whatever code is needed to compute the prediction for a user
+            data = data_tr[e_idxlist[start_idx:end_idx]]
 
-            # The prediction requires a list of two arrays user_id, item_id of equal length
-            # To compute the recommendations for a single user, we must provide its index as many times as the
-            # number of items
-            item_score_user = self.model.predict([self._user_ones_vector*user_id, item_indices],
-                                                 batch_size=100, verbose=0)
+            data_tensor = torch.FloatTensor(data.toarray())
+
+            if total_anneal_steps > 0:
+                anneal = min(anneal_cap,
+                             1. * update_count / total_anneal_steps)
+            else:
+                anneal = anneal_cap
+
+
+            loss, recon_batch = self.model.forward(data_tensor, anneal)
+
+
+
 
             # Do not modify this
             # Put the predictions in the correct items
@@ -93,31 +103,43 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
         #tensorflow.reset_default_graph()
 
         # TODO Instantiate the model
-        # Always clear the default graph if using tehsorflow
 
 
+        p_dnns = nn.ModuleList([nn.Sequential(nn.Linear(self.D, self.M), nn.PReLU(),
+                                              nn.Linear(self.M, self.M), nn.PReLU(),
+                                              nn.Linear(self.M, self.M), nn.PReLU(),
+                                              nn.Linear(self.M, self.M), nn.PReLU(),
+                                              nn.Linear(self.M, self.M), nn.PReLU(),
+                                              nn.Linear(self.M, 2 * self.D)) for _ in range(self.T - 1)])
 
-        self.model = get_model(num_users = self.n_users,
-                          num_items = self.n_items,
-                          params=self._params,
-                          loss_type='cross-entropy',
-                          print_step=10,
-                          verbose=False)
+        decoder_net = nn.Sequential(nn.Linear(self.D, self.M), nn.PReLU(),
+                                    nn.Linear(self.M, self.M), nn.PReLU(),
+                                    nn.Linear(self.M, self.M), nn.PReLU(),
+                                    nn.Linear(self.M, self.M), nn.PReLU(),
+                                    nn.Linear(self.M, self.M), nn.PReLU(),
+                                    nn.Linear(self.M, self.D), nn.Tanh())
+
+        self.model =DDGM(p_dnns, decoder_net, self.beta, self.T, self.D)
 
 
 
     def fit(self,
+            M=200,
             epochs=1,
-            num_factors=64,
-            batch_size=200,
-            learning_rate=0.001,
+            T=3,
+            lr=0.001,
+            beta=0.0001,
 
             # Parametri standard
             temp_file_folder=None,
             **earlystopping_kwargs
             ):
 
-
+        self.D = self.n_items  # input dimension
+        self.M = M  # the number of neurons in scale (s) and translation (t) nets
+        self.T = T  # hyperparater to tune
+        self.beta = beta  # hyperparater to tune #Beta = 0.0001 is best so far
+        self.lr = lr  # learning rate
         # Get unique temporary folder
         self.temp_file_folder = self._get_unique_temp_folder(input_temp_file_folder=temp_file_folder)
 
@@ -134,48 +156,14 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
     # These are the train instances as a list of lists
         # The following code processed the URM into the data structure the model needs to train
-        self._run_epoch(1)
-        self._train_users = []
 
-        self.URM_train = sps.csr_matrix(self.URM_train)
-
-        for user_index in range(self.n_users):
-
-            start_pos = self.URM_train.indptr[user_index]
-            end_pos = self.URM_train.indptr[user_index +1]
-
-            user_profile = self.URM_train.indices[start_pos:end_pos]
-            self._train_users.append(list(user_profile))
-
-
-        self._train_items = []
-
-        self.URM_train = sps.csc_matrix(self.URM_train)
-
-        for user_index in range(self.n_items):
-
-            start_pos = self.URM_train.indptr[user_index]
-            end_pos = self.URM_train.indptr[user_index +1]
-
-            item_profile = self.URM_train.indices[start_pos:end_pos]
-            self._train_items.append(list(item_profile))
-
-
-
-
-
-        self.URM_train = sps.csr_matrix(self.URM_train)
 
 
 
         self._init_model()
 
-
-
-        # TODO Close all sessions used for training and open a new one for the "_best_model"
-        # close session tensorflow
-        #self.sess.close()
-        #self.sess = tensorflow.Session()
+        self.optimizer = torch.optim.Adamax(
+            [p for p in self.model.parameters() if p.requires_grad == True], lr=self.lr)
 
         ###############################################################################
         ### This is a standard training with early stopping part, most likely you won't need to change it
@@ -210,24 +198,12 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
     def _run_epoch(self, currentEpoch):
         # TODO replace this with the train loop for one epoch of the model
-        print(f"Eseguendo il training per l'epoca {currentEpoch}...")
-        main.run_training()
+        # Training and Validation procedure
+        #aspettati errore del formato di URM_train
+        dg.training(
+            model=self.model, optimizer=self.optimizer, training_loader=self.URM_train)
 
-        '''n = self.ICM_train.shape[0]
 
-        # for epoch in range(self._params.n_epochs):
-        num_iter = int(n / self._params.batch_size)
-        # gen_loss = self.cdl_estimate(data_x, params.cdl_max_iter)
-        gen_loss = self.model.cdl_estimate(self.ICM_train, num_iter)
-        self.model.m_theta[:] = self.model.transform(self.ICM_train)
-        likelihood = self.model.pmf_estimate(self._train_users, self._train_items, None, None, self._params)
-        loss = -likelihood + 0.5 * gen_loss * n * self._params.lambda_r
-
-        self.USER_factors = self.model.m_U.copy()
-        self.ITEM_factors = self.model.m_V.copy()
-
-        logging.info("[#epoch=%06d], loss=%.5f, neg_likelihood=%.5f, gen_loss=%.5f" % (
-            currentEpoch, loss, -likelihood, gen_loss))'''
 
 
 

@@ -7,9 +7,6 @@ from sklearn import datasets
 from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
-import sys
-sys.path.append(r'C:\Users\laral\Desktop\RS\RecSys_Porting_Project-master\Conferences\RecSysProject\CODIGEM_github')
-
 
 import ranking_metrics as metric
 

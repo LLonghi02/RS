@@ -111,23 +111,23 @@ def read_data_split_and_search(dataset_name,
 
             # This is a simple version of the tuning code that is reported below and uses SearchSingleCase
             # You may use this for a simpler testing
-            recommender_instance = CODIGEM_RecommenderWrapper(URM_train)
+            #recommender_instance = CODIGEM_RecommenderWrapper(URM_train)
             #
-            recommender_instance.fit(**article_hyperparameters,
-                                      **earlystopping_hyperparameters)
+            #recommender_instance.fit(**article_hyperparameters,
+                                      #**earlystopping_hyperparameters)
 
-            evaluator_test.evaluateRecommender(recommender_instance)
+            #evaluator_test.evaluateRecommender(recommender_instance)
 
             # Fit the DL model, select the optimal number of epochs and save the result
-            hyperparameterSearch = SearchSingleCase(CODIGEM_RecommenderWrapper,
-                                                    evaluator_validation=evaluator_validation,
-                                                    evaluator_test=evaluator_test)
+            #hyperparameterSearch = SearchSingleCase(CODIGEM_RecommenderWrapper,
+             #                                       evaluator_validation=evaluator_validation,
+              #                                      evaluator_test=evaluator_test)
 
             # Specify which attributes are needed. In this case the constructor only required the URM train,
             # no additional fit arguments are required (besides those that are listed previously in the hyperparameters dictionary)
             # and the hyperparameters required by the earlystopping are provided separately.
             recommender_input_args = SearchInputRecommenderArgs(
-                CONSTRUCTOR_POSITIONAL_ARGS=[URM_train],
+                CONSTRUCTOR_POSITIONAL_ARGS=[URM_train], #TODO parametri del costruttore del wrapper-ok
                 FIT_KEYWORD_ARGS={},
                 EARLYSTOPPING_KEYWORD_ARGS=earlystopping_hyperparameters)
 
