@@ -8,7 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
 
-import ranking_metrics as metric
+import Conferences.RecSysProject.CODIGEM_github.ranking_metrics as metric
 
 
 # Auxiliary functions, classes such as distributions

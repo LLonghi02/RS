@@ -98,47 +98,44 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
         return item_scores'''
 
     def _compute_item_score(self, user_id_array, data_tr=None, data_te=None, items_to_compute=None, batch_size=200):
-        item_scores = -np.ones((len(user_id_array), self.n_items)) * np.inf
+        item_scores = - np.ones((len(user_id_array), self.n_items)) * np.inf
 
-        if self.USER_factors is not None and self.ITEM_factors is not None:
-            for user_index, user_id in enumerate(user_id_array):
-                item_scores[user_index, :] = np.dot(self.USER_factors[user_id], self.ITEM_factors.T)
-
-        elif self.W_Sparse is not None:
-            for user_index, user_id in enumerate(user_id_array):
-                item_scores[user_index, :] = self.W_Sparse[user_id].toarray().ravel()
+        total_anneal_steps = 200000
+        global update_count
+        anneal_cap = 0.2
 
         if items_to_compute is not None:
-            item_scores[:, ~items_to_compute] = -np.inf
+            item_indices = items_to_compute
+        else:
+            item_indices = self._item_indices
 
-        if data_tr is not None and data_te is not None:
-            self.model.eval()
-            e_N = data_tr.shape[0]
-            idxlist = list(range(e_N))
+        for user_index in range(len(user_id_array)):
 
-            total_loss = 0.0
-            n20_list, r20_list = [], []
+            user_id = user_id_array[user_index]
 
-            with torch.no_grad():
-                for start_idx in range(0, e_N, batch_size):
-                    end_idx = min(start_idx + batch_size, e_N)
-                    data = data_tr[idxlist[start_idx:end_idx]]
-                    heldout_data = data_te[idxlist[start_idx:end_idx]]
+            # TODO this predict function should be replaced by whatever code is needed to compute the prediction for a user
+            data = data_tr[e_idxlist[start_idx:end_idx]]
 
-                    data_tensor = naive_sparse2tensor(data).to(device)
-                    loss, recon_batch = self.model.forward(data_tensor, 1.0)
-                    total_loss += loss.item()
+            data_tensor = torch.FloatTensor(data.toarray())
 
-                    recon_batch = recon_batch.cpu().numpy()
-                    recon_batch[data.nonzero()] = -np.inf
+            if total_anneal_steps > 0:
+                anneal = min(anneal_cap,
+                             1. * update_count / total_anneal_steps)
+            else:
+                anneal = anneal_cap
 
-                    n20 = metric.NDCG_binary_at_k_batch(recon_batch, heldout_data, 20)
-                    r20 = metric.Recall_at_k_batch(recon_batch, heldout_data, 20)
+            loss, recon_batch = self.model.forward(data_tensor, anneal)
 
-                    n20_list.append(n20)
-                    r20_list.append(r20)
+            item_score_user = self.model.predict([self._user_ones_vector * user_id, item_indices],
+                                                 batch_size=100, verbose=0)
 
-            return total_loss / len(range(0, e_N, batch_size)), np.mean(n20_list), np.mean(r20_list)
+            # Do not modify this
+            # Put the predictions in the correct items
+
+            if items_to_compute is not None:
+                item_scores[user_index, items_to_compute] = item_score_user.ravel()[items_to_compute]
+            else:
+                item_scores[user_index, :] = item_score_user.ravel()
 
         return item_scores
 
@@ -265,7 +262,8 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
         # TODO replace this with the Saver required by the model
         #  in this case the neural network will be saved with the _weights suffix, which is rather standard
-        self.model.save_weights(folder_path + file_name + "_weights", overwrite=True)
+        #TODO da cambiare
+        #self.model.save_weights(folder_path + file_name + "_weights", overwrite=True)
 
         # TODO Alternativley you may save the tensorflow model with a session
         #saver = tensorflow.train.Saver()
@@ -276,10 +274,10 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
             #  the model when calling the load_model
             "n_users": self.n_users,
             "n_items": self.n_items,
-            "mf_dim": self.mf_dim,
-            "layers": self.layers,
-            "reg_layers": self.reg_layers,
-            "reg_mf": self.reg_mf,
+            #"mf_dim": self.mf_dim,
+            #"layers": self.layers,
+            #"reg_layers": self.reg_layers,
+            #"reg_mf": self.reg_mf,
         }
 
         # Do not change this

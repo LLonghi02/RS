@@ -119,9 +119,9 @@ def read_data_split_and_search(dataset_name,
             #evaluator_test.evaluateRecommender(recommender_instance)
 
             # Fit the DL model, select the optimal number of epochs and save the result
-            #hyperparameterSearch = SearchSingleCase(CODIGEM_RecommenderWrapper,
-             #                                       evaluator_validation=evaluator_validation,
-              #                                      evaluator_test=evaluator_test)
+            hyperparameterSearch = SearchSingleCase(CODIGEM_RecommenderWrapper,
+                                                   evaluator_validation=evaluator_validation,
+                                                   evaluator_test=evaluator_test)
 
             # Specify which attributes are needed. In this case the constructor only required the URM train,
             # no additional fit arguments are required (besides those that are listed previously in the hyperparameters dictionary)
