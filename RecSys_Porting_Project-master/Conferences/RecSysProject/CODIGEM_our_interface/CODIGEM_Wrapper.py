@@ -16,7 +16,7 @@ from Recommenders.Incremental_Training_Early_Stopping import Incremental_Trainin
 from Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs import DDGM
 import numpy as np
 import Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs as dg
-
+import copy
 
 
 
@@ -97,45 +97,66 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
         return item_scores'''
 
+    def naive_sparse2tensor(data):
+        return torch.FloatTensor(data.toarray())
+
     def _compute_item_score(self, user_id_array, data_tr=None, data_te=None, items_to_compute=None, batch_size=200):
         item_scores = - np.ones((len(user_id_array), self.n_items)) * np.inf
 
+        N = training_loader.shape[0]
+        total_loss = 0.0
         total_anneal_steps = 200000
         global update_count
         anneal_cap = 0.2
 
-        if items_to_compute is not None:
-            item_indices = items_to_compute
-        else:
-            item_indices = self._item_indices
+        e_idxlist = list(range(data_tr.shape[0]))
+        e_N = data_tr.shape[0]
 
-        for user_index in range(len(user_id_array)):
+        n20_list = []
+        n50_list = []
+        n100_list = []
+        r20_list = []
+        r50_list = []
+        r100_list = []
 
-            user_id = user_id_array[user_index]
+        with torch.no_grad():
+            for start_idx in range(0, e_N, batch_size):
+                end_idx = min(start_idx + batch_size, N)
+                data = data_tr[e_idxlist[start_idx:end_idx]]
+                heldout_data = data_te[e_idxlist[start_idx:end_idx]]
 
-            # TODO this predict function should be replaced by whatever code is needed to compute the prediction for a user
-            data = data_tr[e_idxlist[start_idx:end_idx]]
+                data_tensor = naive_sparse2tensor(data).to(device)
 
-            data_tensor = torch.FloatTensor(data.toarray())
+                if total_anneal_steps > 0:
+                    anneal = min(anneal_cap,
+                                 1. * update_count / total_anneal_steps)
+                else:
+                    anneal = anneal_cap
 
-            if total_anneal_steps > 0:
-                anneal = min(anneal_cap,
-                             1. * update_count / total_anneal_steps)
-            else:
-                anneal = anneal_cap
+                loss, recon_batch = model.forward(data_tensor, anneal)
 
-            loss, recon_batch = self.model.forward(data_tensor, anneal)
+                total_loss += loss.item()
 
-            item_score_user = self.model.predict([self._user_ones_vector * user_id, item_indices],
-                                                 batch_size=100, verbose=0)
+                # Exclude examples from training set
+                recon_batch = recon_batch.cpu().numpy()
+                recon_batch[data.nonzero()] = -np.inf
 
-            # Do not modify this
-            # Put the predictions in the correct items
+                n20 = metric.NDCG_binary_at_k_batch(
+                    recon_batch, heldout_data, 20)
+                n50 = metric.NDCG_binary_at_k_batch(
+                    recon_batch, heldout_data, 50)
+                n100 = metric.NDCG_binary_at_k_batch(
+                    recon_batch, heldout_data, 100)
+                r20 = metric.Recall_at_k_batch(recon_batch, heldout_data, 20)
+                r50 = metric.Recall_at_k_batch(recon_batch, heldout_data, 50)
+                r100 = metric.Recall_at_k_batch(recon_batch, heldout_data, 100)
 
-            if items_to_compute is not None:
-                item_scores[user_index, items_to_compute] = item_score_user.ravel()[items_to_compute]
-            else:
-                item_scores[user_index, :] = item_score_user.ravel()
+                n20_list.append(n20)
+                n50_list.append(n50)
+                n100_list.append(n100)
+                r20_list.append(r20)
+                r50_list.append(r50)
+                r100_list.append(r100)
 
         return item_scores
 
@@ -254,7 +275,7 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
 
     def save_model(self, folder_path, file_name = None):
-
+        #TODO vedi multiVAE_PyTorch e aggiungi quello che ti serve (model state)
         if file_name is None:
             file_name = self.RECOMMENDER_NAME
 
@@ -272,9 +293,18 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
         data_dict_to_save = {
             # TODO replace this with the hyperparameters and attribute list you need to re-instantiate
             #  the model when calling the load_model
+
+            # TODO metti gli iperparametri
             "n_users": self.n_users,
             "n_items": self.n_items,
-            #"mf_dim": self.mf_dim,
+            "M" : 200,
+            "epochs" : 1,
+            "T" : 3,
+            "lr" : 0.001,
+            "beta" : 0.0001,
+            "_model_state": copy.deepcopy(self.model),
+
+        #"mf_dim": self.mf_dim,
             #"layers": self.layers,
             #"reg_layers": self.reg_layers,
             #"reg_mf": self.reg_mf,
@@ -306,8 +336,9 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
         # TODO replace this with what required to re-instantiate the model and load its weights,
         #  Call the init_model function you created before
+        #TODO da adattare
         self._init_model()
-        self.model.load_weights(folder_path + file_name + "_weights")
+        #self.model.load_weights(folder_path + file_name + "_weights")
 
         # TODO If you are using tensorflow, you may instantiate a new session here
         # TODO reset the default graph to "clean" the tensorflow state
