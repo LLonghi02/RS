@@ -6,17 +6,16 @@ Created on 18/12/18
 @author: Maurizio Ferrari Dacrema
 """
 
-import scipy.sparse as sps
-#import tensorflow
 
-from Conferences.RecSysProject.CODIGEM_github import main
-from Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs import DDGM
-from Conferences.RecSysProject.CODIGEM_github.main import *
-
+import torch
+import torch.nn as nn
 from Recommenders.BaseCBFRecommender import BaseItemCBFRecommender
 from Recommenders.BaseTempFolder import BaseTempFolder
 from Recommenders.DataIO import DataIO
 from Recommenders.Incremental_Training_Early_Stopping import Incremental_Training_Early_Stopping
+from Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs import DDGM
+import numpy as np
+import Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs as dg
 
 
 
@@ -41,7 +40,7 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
         self._item_indices = np.arange(0, self.n_items, dtype=np.int)
 
 
-    def _compute_item_score(self, user_id_array, items_to_compute=None):
+    '''def _compute_item_score(self, user_id_array, items_to_compute=None):
         # TODO if the model in the end is either a matrix factorization algorithm or an ItemKNN/UserKNN
         #  you can have this class inherit from BaseMatrixFactorization, BaseItemSimilarityMatrixRecommender
         #  or BaseUSerSimilarityMatrixRecommender
@@ -55,11 +54,14 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
         # Create the full data structure that will contain the item scores
         item_scores = - np.ones((len(user_id_array), self.n_items)) * np.inf
 
+        total_anneal_steps = 200000
+        global update_count
+        anneal_cap = 0.2
+
         if items_to_compute is not None:
             item_indices = items_to_compute
         else:
             item_indices = self._item_indices
-
 
         for user_index in range(len(user_id_array)):
 
@@ -80,18 +82,65 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
             loss, recon_batch = self.model.forward(data_tensor, anneal)
 
 
+            item_score_user = self.model.predict([self._user_ones_vector*user_id, item_indices],
+                                                 batch_size=100, verbose=0)
 
 
             # Do not modify this
             # Put the predictions in the correct items
+
             if items_to_compute is not None:
                 item_scores[user_index, items_to_compute] = item_score_user.ravel()[items_to_compute]
             else:
                 item_scores[user_index, :] = item_score_user.ravel()
 
 
-        return item_scores
+        return item_scores'''
 
+    def _compute_item_score(self, user_id_array, data_tr=None, data_te=None, items_to_compute=None, batch_size=200):
+        item_scores = -np.ones((len(user_id_array), self.n_items)) * np.inf
+
+        if self.USER_factors is not None and self.ITEM_factors is not None:
+            for user_index, user_id in enumerate(user_id_array):
+                item_scores[user_index, :] = np.dot(self.USER_factors[user_id], self.ITEM_factors.T)
+
+        elif self.W_Sparse is not None:
+            for user_index, user_id in enumerate(user_id_array):
+                item_scores[user_index, :] = self.W_Sparse[user_id].toarray().ravel()
+
+        if items_to_compute is not None:
+            item_scores[:, ~items_to_compute] = -np.inf
+
+        if data_tr is not None and data_te is not None:
+            self.model.eval()
+            e_N = data_tr.shape[0]
+            idxlist = list(range(e_N))
+
+            total_loss = 0.0
+            n20_list, r20_list = [], []
+
+            with torch.no_grad():
+                for start_idx in range(0, e_N, batch_size):
+                    end_idx = min(start_idx + batch_size, e_N)
+                    data = data_tr[idxlist[start_idx:end_idx]]
+                    heldout_data = data_te[idxlist[start_idx:end_idx]]
+
+                    data_tensor = naive_sparse2tensor(data).to(device)
+                    loss, recon_batch = self.model.forward(data_tensor, 1.0)
+                    total_loss += loss.item()
+
+                    recon_batch = recon_batch.cpu().numpy()
+                    recon_batch[data.nonzero()] = -np.inf
+
+                    n20 = metric.NDCG_binary_at_k_batch(recon_batch, heldout_data, 20)
+                    r20 = metric.Recall_at_k_batch(recon_batch, heldout_data, 20)
+
+                    n20_list.append(n20)
+                    r20_list.append(r20)
+
+            return total_loss / len(range(0, e_N, batch_size)), np.mean(n20_list), np.mean(r20_list)
+
+        return item_scores
 
     def _init_model(self):
         """
@@ -148,11 +197,6 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
         #  Preferably create an init_model function
         #  If you are using tensorflow before creating the model call tf.reset_default_graph()
 
-        # The following code contains various operations needed by another wrapper
-
-        self.learning_rate = learning_rate
-        self.num_factors = num_factors
-        self.batch_size = batch_size
 
     # These are the train instances as a list of lists
         # The following code processed the URM into the data structure the model needs to train
