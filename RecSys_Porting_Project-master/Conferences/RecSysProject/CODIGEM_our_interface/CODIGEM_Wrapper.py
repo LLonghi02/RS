@@ -9,6 +9,8 @@ Created on 18/12/18
 
 import torch
 import torch.nn as nn
+
+from Conferences.RecSysProject.CODIGEM_github.ranking_metrics import NDCG_binary_at_k_batch, Recall_at_k_batch
 from Recommenders.BaseCBFRecommender import BaseItemCBFRecommender
 from Recommenders.BaseTempFolder import BaseTempFolder
 from Recommenders.DataIO import DataIO
@@ -39,8 +41,7 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
         # This is used in _compute_item_score
         self._item_indices = np.arange(0, self.n_items, dtype=np.int)
 
-
-    '''def _compute_item_score(self, user_id_array, items_to_compute=None):
+    def _compute_item_score(self, user_id_array, items_to_compute=None):
         # TODO if the model in the end is either a matrix factorization algorithm or an ItemKNN/UserKNN
         #  you can have this class inherit from BaseMatrixFactorization, BaseItemSimilarityMatrixRecommender
         #  or BaseUSerSimilarityMatrixRecommender
@@ -54,78 +55,34 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
         # Create the full data structure that will contain the item scores
         item_scores = - np.ones((len(user_id_array), self.n_items)) * np.inf
 
-        total_anneal_steps = 200000
-        global update_count
-        anneal_cap = 0.2
-
         if items_to_compute is not None:
             item_indices = items_to_compute
         else:
             item_indices = self._item_indices
+
+        # Turn on evaluation mode
+        self.model.eval()
+        total_loss = 0.0
+        batch_size = 200
+        total_anneal_steps = 200000
+        anneal_cap = 0.2
+        global update_count
+
+        e_idxlist = list(range(user_id_array.shape[0]))
+        N = user_id_array.shape[0]
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
         for user_index in range(len(user_id_array)):
 
             user_id = user_id_array[user_index]
 
             # TODO this predict function should be replaced by whatever code is needed to compute the prediction for a user
-            data = data_tr[e_idxlist[start_idx:end_idx]]
+            for start_idx in range(0, N, batch_size):
 
-            data_tensor = torch.FloatTensor(data.toarray())
-
-            if total_anneal_steps > 0:
-                anneal = min(anneal_cap,
-                             1. * update_count / total_anneal_steps)
-            else:
-                anneal = anneal_cap
-
-
-            loss, recon_batch = self.model.forward(data_tensor, anneal)
-
-
-            item_score_user = self.model.predict([self._user_ones_vector*user_id, item_indices],
-                                                 batch_size=100, verbose=0)
-
-
-            # Do not modify this
-            # Put the predictions in the correct items
-
-            if items_to_compute is not None:
-                item_scores[user_index, items_to_compute] = item_score_user.ravel()[items_to_compute]
-            else:
-                item_scores[user_index, :] = item_score_user.ravel()
-
-
-        return item_scores'''
-
-    def naive_sparse2tensor(data):
-        return torch.FloatTensor(data.toarray())
-
-    def _compute_item_score(self, user_id_array, data_tr=None, data_te=None, items_to_compute=None, batch_size=200):
-        item_scores = - np.ones((len(user_id_array), self.n_items)) * np.inf
-
-        N = training_loader.shape[0]
-        total_loss = 0.0
-        total_anneal_steps = 200000
-        global update_count
-        anneal_cap = 0.2
-
-        e_idxlist = list(range(data_tr.shape[0]))
-        e_N = data_tr.shape[0]
-
-        n20_list = []
-        n50_list = []
-        n100_list = []
-        r20_list = []
-        r50_list = []
-        r100_list = []
-
-        with torch.no_grad():
-            for start_idx in range(0, e_N, batch_size):
                 end_idx = min(start_idx + batch_size, N)
-                data = data_tr[e_idxlist[start_idx:end_idx]]
-                heldout_data = data_te[e_idxlist[start_idx:end_idx]]
+                data = user_id_array[e_idxlist[start_idx:end_idx]]
 
-                data_tensor = naive_sparse2tensor(data).to(device)
+                data_tensor=torch.FloatTensor(data.toarray()).to(device)
 
                 if total_anneal_steps > 0:
                     anneal = min(anneal_cap,
@@ -133,30 +90,26 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
                 else:
                     anneal = anneal_cap
 
-                loss, recon_batch = model.forward(data_tensor, anneal)
-
+                #predice un utente
+                loss, recon_batch = self.model.forward(data_tensor, anneal)
                 total_loss += loss.item()
 
                 # Exclude examples from training set
                 recon_batch = recon_batch.cpu().numpy()
                 recon_batch[data.nonzero()] = -np.inf
 
-                n20 = metric.NDCG_binary_at_k_batch(
-                    recon_batch, heldout_data, 20)
-                n50 = metric.NDCG_binary_at_k_batch(
-                    recon_batch, heldout_data, 50)
-                n100 = metric.NDCG_binary_at_k_batch(
-                    recon_batch, heldout_data, 100)
-                r20 = metric.Recall_at_k_batch(recon_batch, heldout_data, 20)
-                r50 = metric.Recall_at_k_batch(recon_batch, heldout_data, 50)
-                r100 = metric.Recall_at_k_batch(recon_batch, heldout_data, 100)
+            # The prediction requires a list of two arrays user_id, item_id of equal length
+            # To compute the recommendations for a single user, we must provide its index as many times as the
+            # number of items
+            item_score_user = self.model.predict([self._user_ones_vector * user_id, item_indices],
+                                                batch_size=200, verbose=0)
 
-                n20_list.append(n20)
-                n50_list.append(n50)
-                n100_list.append(n100)
-                r20_list.append(r20)
-                r50_list.append(r50)
-                r100_list.append(r100)
+            # Do not modify this
+            # Put the predictions in the correct items
+            if items_to_compute is not None:
+                item_scores[user_index, items_to_compute] = item_score_user.ravel()[items_to_compute]
+            else:
+                item_scores[user_index, :] = item_score_user.ravel()
 
         return item_scores
 
@@ -302,7 +255,7 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
             "T" : 3,
             "lr" : 0.001,
             "beta" : 0.0001,
-            "_model_state": copy.deepcopy(self.model),
+           # "_model_state": copy.deepcopy(self.model),
 
         #"mf_dim": self.mf_dim,
             #"layers": self.layers,
