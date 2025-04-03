@@ -237,7 +237,7 @@ def training(model, optimizer, training_loader):
 
     loss_train = loss.item()
 
-    return loss_train
+    return loss_train,update_count
 
 
 def evaluate(data_tr, data_te, model, N):
@@ -272,7 +272,7 @@ def evaluate(data_tr, data_te, model, N):
                              1. * update_count / total_anneal_steps)
             else:
                 anneal = anneal_cap
-
+            #predice un utente
             loss, recon_batch = model.forward(data_tensor, anneal)
 
             total_loss += loss.item()

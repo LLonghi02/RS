@@ -9,13 +9,14 @@ Created on 18/12/18
 
 import torch
 import torch.nn as nn
+import scipy.sparse
 
 from Conferences.RecSysProject.CODIGEM_github.ranking_metrics import NDCG_binary_at_k_batch, Recall_at_k_batch
 from Recommenders.BaseCBFRecommender import BaseItemCBFRecommender
 from Recommenders.BaseTempFolder import BaseTempFolder
 from Recommenders.DataIO import DataIO
 from Recommenders.Incremental_Training_Early_Stopping import Incremental_Training_Early_Stopping
-from Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs import DDGM
+from Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs import DDGM, update_count
 import numpy as np
 import Conferences.RecSysProject.CODIGEM_github.ddgm_model_rs as dg
 import copy
@@ -42,74 +43,65 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
         self._item_indices = np.arange(0, self.n_items, dtype=np.int)
 
     def _compute_item_score(self, user_id_array, items_to_compute=None):
-        # TODO if the model in the end is either a matrix factorization algorithm or an ItemKNN/UserKNN
-        #  you can have this class inherit from BaseMatrixFactorization, BaseItemSimilarityMatrixRecommender
-        #  or BaseUSerSimilarityMatrixRecommender
-        #  in which case you do not have to re-implement this function, you only need to set the
-        #  USER_factors, ITEM_factors (see PureSVD) or W_Sparse (see ItemKNN) data structures in the FIT function
-        # In order to compute the prediction the model may need a Session. The session is an attribute of this Wrapper.
-        # There are two possible scenarios for the creation of the session: at the beginning of the fit function (training phase)
-        # or at the end of the fit function (before loading the best model, testing phase)
-
-        # Do not modify this
-        # Create the full data structure that will contain the item scores
-        item_scores = - np.ones((len(user_id_array), self.n_items)) * np.inf
+        """
+        Compute item scores for the given user(s) using the trained model.
+        """
+        # Matrice per contenere i punteggi degli item per ogni utente
+        item_scores = -np.ones((len(user_id_array), self.n_items)) * np.inf
 
         if items_to_compute is not None:
             item_indices = items_to_compute
         else:
-            item_indices = self._item_indices
+            item_indices = np.arange(self.n_items)
 
-        # Turn on evaluation mode
+        # Configurazione per l'inferenza
         self.model.eval()
         total_loss = 0.0
         batch_size = 200
         total_anneal_steps = 200000
         anneal_cap = 0.2
-        global update_count
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
         e_idxlist = list(range(user_id_array.shape[0]))
         N = user_id_array.shape[0]
-        device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        for user_index in range(len(user_id_array)):
-
-            user_id = user_id_array[user_index]
-
-            # TODO this predict function should be replaced by whatever code is needed to compute the prediction for a user
+        with torch.no_grad():
             for start_idx in range(0, N, batch_size):
-
                 end_idx = min(start_idx + batch_size, N)
+
+                # Ottieni i dati degli utenti nel batch
                 data = user_id_array[e_idxlist[start_idx:end_idx]]
 
-                data_tensor=torch.FloatTensor(data.toarray()).to(device)
+                # Controlla se data è sparse prima di chiamare toarray()
+                if scipy.sparse.issparse(data):
+                    data = data.toarray()
 
+                data_tensor = torch.FloatTensor(data).to(device)
+                #versione slim data_tensor = torch.FloatTensor(data.toarray()).to(device)
+
+                # Calcolo annealing
                 if total_anneal_steps > 0:
-                    anneal = min(anneal_cap,
-                                 1. * update_count / total_anneal_steps)
+                    anneal = min(anneal_cap, 1. * self.update_count / total_anneal_steps)
                 else:
                     anneal = anneal_cap
 
-                #predice un utente
+                # Forward pass del modello
                 loss, recon_batch = self.model.forward(data_tensor, anneal)
                 total_loss += loss.item()
 
-                # Exclude examples from training set
+                # Conversione dei risultati in array numpy
                 recon_batch = recon_batch.cpu().numpy()
+
+                # Escludere gli item già visti nel training
                 recon_batch[data.nonzero()] = -np.inf
 
-            # The prediction requires a list of two arrays user_id, item_id of equal length
-            # To compute the recommendations for a single user, we must provide its index as many times as the
-            # number of items
-            item_score_user = self.model.predict([self._user_ones_vector * user_id, item_indices],
-                                                batch_size=200, verbose=0)
-
-            # Do not modify this
-            # Put the predictions in the correct items
-            if items_to_compute is not None:
-                item_scores[user_index, items_to_compute] = item_score_user.ravel()[items_to_compute]
-            else:
-                item_scores[user_index, :] = item_score_user.ravel()
+                # Assegna i punteggi agli utenti nel batch
+                for batch_idx, user_index in enumerate(range(start_idx, end_idx)):
+                    if items_to_compute is not None:
+                        item_scores[user_index, items_to_compute] = recon_batch[batch_idx, items_to_compute]
+                    else:
+                        item_scores[user_index, :] = recon_batch[batch_idx, :]
 
         return item_scores
 
@@ -212,12 +204,13 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
 
     def _run_epoch(self, currentEpoch):
-        # TODO replace this with the train loop for one epoch of the model
+        # TODO replace this with the train loop for one epoch of the model-ok
         # Training and Validation procedure
         #aspettati errore del formato di URM_train
-        dg.training(
-            model=self.model, optimizer=self.optimizer, training_loader=self.URM_train)
-
+        self.loss_train, self.update_count = dg.training(
+            model=self.model, optimizer=self.optimizer, training_loader=self.URM_train
+        )
+        print(update_count)
 
 
 
