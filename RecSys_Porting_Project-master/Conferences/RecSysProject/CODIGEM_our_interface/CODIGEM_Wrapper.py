@@ -63,45 +63,52 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        e_idxlist = list(range(user_id_array.shape[0]))
-        N = user_id_array.shape[0]
+        #e_idxlist = list(range(self.URM_train.shape[0]))
+        #N = self.URM_train.shape[0]
 
         with torch.no_grad():
-            for start_idx in range(0, N, batch_size):
-                end_idx = min(start_idx + batch_size, N)
+            #for start_idx in range(0, N, batch_size):
+            #end_idx = min(start_idx + batch_size, N)
 
-                # Ottieni i dati degli utenti nel batch
-                data = user_id_array[e_idxlist[start_idx:end_idx]]
+            # Ottieni i dati degli utenti nel batch
+            u = torch.LongTensor(user_id_array)
+            data = self.URM_train[u]
 
-                # Controlla se data è sparse prima di chiamare toarray()
-                if scipy.sparse.issparse(data):
-                    data = data.toarray()
+            # Controlla se data è sparse prima di chiamare toarray()
+            #if scipy.sparse.issparse(data):
+                #data = data.toarray()
 
-                data_tensor = torch.FloatTensor(data).to(device)
-                #versione slim data_tensor = torch.FloatTensor(data.toarray()).to(device)
+            data_tensor = torch.sparse_csr_tensor(data.indptr,
+                                                        data.indices,
+                                                        data.data,
+                                                        size=data.shape, dtype=torch.float32,
+                                                        device=device, requires_grad=False).to_dense()
 
-                # Calcolo annealing
-                if total_anneal_steps > 0:
-                    anneal = min(anneal_cap, 1. * self.update_count / total_anneal_steps)
-                else:
-                    anneal = anneal_cap
+            #data_tensor = torch.FloatTensor(data).to(device)
+            #versione slim data_tensor = torch.FloatTensor(data.toarray()).to(device)
 
-                # Forward pass del modello
-                loss, recon_batch = self.model.forward(data_tensor, anneal)
-                total_loss += loss.item()
+            # Calcolo annealing
+            if total_anneal_steps > 0:
+                anneal = min(anneal_cap, 1. * self.update_count / total_anneal_steps)
+            else:
+                anneal = anneal_cap
 
-                # Conversione dei risultati in array numpy
-                recon_batch = recon_batch.cpu().numpy()
+            # Forward pass del modello
+            loss, recon_batch = self.model.forward(data_tensor, anneal)
+            total_loss += loss.item()
 
-                # Escludere gli item già visti nel training
-                recon_batch[data.nonzero()] = -np.inf
+            # Conversione dei risultati in array numpy
+            recon_batch = recon_batch.cpu().numpy()
 
-                # Assegna i punteggi agli utenti nel batch
-                for batch_idx, user_index in enumerate(range(start_idx, end_idx)):
-                    if items_to_compute is not None:
-                        item_scores[user_index, items_to_compute] = recon_batch[batch_idx, items_to_compute]
-                    else:
-                        item_scores[user_index, :] = recon_batch[batch_idx, :]
+            # Escludere gli item già visti nel training
+            recon_batch[data.nonzero()] = -np.inf
+
+        # Assegna i punteggi agli utenti nel batch
+        #for batch_idx, user_index in enumerate(range(start_idx, end_idx)):
+        if items_to_compute is not None:
+            item_scores[user_id_array, item_indices] = recon_batch[:, item_indices]
+        else:
+            item_scores = recon_batch
 
         return item_scores
 
@@ -241,8 +248,6 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
             #  the model when calling the load_model
 
             # TODO metti gli iperparametri
-            "n_users": self.n_users,
-            "n_items": self.n_items,
             "M" : 200,
             "epochs" : 1,
             "T" : 3,
