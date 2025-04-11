@@ -95,8 +95,8 @@ def read_data_split_and_search(dataset_name,
             # TODO fill this dictionary with the hyperparameters of the algorithm --OK
             article_hyperparameters = {
                 "batch_size": 200,
-                #"epochs": 100,
-                "epochs": 1,
+                "epochs": 100,
+                #"epochs": 1,
 
                 "learning_rate_embeddings": 0.001,
                 "learning_rate_CNN": 0.001,
@@ -276,7 +276,7 @@ if __name__ == '__main__':
 
     # TODO: Replace with algorithm and conference name
     ALGORITHM_NAME = "CODIGEM"
-    CONFERENCE_NAME = "ML"
+    CONFERENCE_NAME = "CODIGEM_1"
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--baseline_tune', help="Baseline hyperparameter search", type=bool, default=False)

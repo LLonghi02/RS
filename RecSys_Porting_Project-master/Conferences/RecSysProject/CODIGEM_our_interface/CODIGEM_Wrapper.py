@@ -144,7 +144,7 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
     def fit(self,
             M=200,
-            epochs=1,
+            epochs=100,
             T=3,
             lr=0.001,
             beta=0.0001,
@@ -249,7 +249,7 @@ class CODIGEM_RecommenderWrapper(BaseItemCBFRecommender, Incremental_Training_Ea
 
             # TODO metti gli iperparametri
             "M" : 200,
-            "epochs" : 1,
+            "epochs" : 100,
             "T" : 3,
             "lr" : 0.001,
             "beta" : 0.0001,
