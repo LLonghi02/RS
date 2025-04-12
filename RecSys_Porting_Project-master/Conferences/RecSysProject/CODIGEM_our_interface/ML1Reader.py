@@ -10,10 +10,10 @@ from Recommenders.DataIO import DataIO
 from Data_manager.split_functions.split_train_validation_random_holdout import split_train_in_two_percentage_global_sample
 import os
 
-from Data_manager.Movielens.Movielens10MReader import Movielens10MReader as Movielens10MReader_DataManager
+from Data_manager.Movielens.Movielens1MReader import Movielens1MReader as Movielens1MReader_DataManager
 
 
-class ML10MReader(object):
+class ML1MReader(object):
 
     URM_DICT = {}
     ICM_DICT = {}
@@ -21,7 +21,7 @@ class ML10MReader(object):
 
     def __init__(self, pre_splitted_path):
 
-        super(ML10MReader, self).__init__()
+        super(ML1MReader, self).__init__()
 
         pre_splitted_path += "data_split/"
         pre_splitted_filename = "splitted_data_"
@@ -34,7 +34,7 @@ class ML10MReader(object):
 
         try:
 
-            print("ML10MReader: Attempting to load pre-splitted data (Reader)")
+            print("ML1MReader: Attempting to load pre-splitted data (Reader)")
 
             for attrib_name, attrib_object in dataIO.load_data(pre_splitted_filename).items():
                  self.__setattr__(attrib_name, attrib_object)
@@ -42,11 +42,11 @@ class ML10MReader(object):
 
         except FileNotFoundError:
 
-            print("ML10MReader: Pre-splitted data not found, building new one")
+            print("ML1MReader: Pre-splitted data not found, building new one")
 
             # TODO Replace this with the publicly available dataset you need
             #  The DataManagers are in the Data_Manager folder, if the dataset is already there use that data reader
-            data_reader = Movielens10MReader_DataManager()
+            data_reader = Movielens1MReader_DataManager()
             dataset = data_reader.load_data()
 
             URM_all = dataset.get_URM_all()

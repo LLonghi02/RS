@@ -3,7 +3,7 @@
 import sys
 
 from Conferences.RecSysProject.CODIGEM_our_interface.AEReader import AEReader
-from Conferences.RecSysProject.CODIGEM_our_interface.ML10Reader import ML10MReader
+from Conferences.RecSysProject.CODIGEM_our_interface.ML1Reader import ML1MReader
 from Conferences.RecSysProject.CODIGEM_our_interface.ML20Reader import ML20MReader
 from Conferences.RecSysProject.CODIGEM_our_interface.CODIGEM_Wrapper import CODIGEM_RecommenderWrapper
 from HyperparameterTuning.SearchSingleCase import SearchSingleCase
@@ -39,8 +39,8 @@ def read_data_split_and_search(dataset_name,
 
     if dataset_name == "ml20m":
         dataset = ML20MReader(data_folder_path)
-    elif dataset_name == "ml10m":
-        dataset = ML10MReader(data_folder_path)
+    elif dataset_name == "ml1m":
+        dataset = ML1MReader(data_folder_path)
     elif dataset_name == "AE":
         dataset = AEReader(data_folder_path)
     else:
@@ -276,7 +276,7 @@ if __name__ == '__main__':
 
     # TODO: Replace with algorithm and conference name
     ALGORITHM_NAME = "CODIGEM"
-    CONFERENCE_NAME = "CODIGEM_1"
+    CONFERENCE_NAME = "CODIGEM_2"
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--baseline_tune', help="Baseline hyperparameter search", type=bool, default=False)
@@ -291,7 +291,7 @@ if __name__ == '__main__':
     KNN_similarity_to_report_list = ["cosine"]  # , "dice", "jaccard", "asymmetric", "tversky"]
 
     # TODO: Replace with dataset names, for a runnable example of this pipeline use only movielens20m
-    dataset_list = ["AE","ml10m","ml20m"]
+    dataset_list = ["ml1m","ml20m","AE"]
 
     for dataset_name in dataset_list:
         read_data_split_and_search(dataset_name,
