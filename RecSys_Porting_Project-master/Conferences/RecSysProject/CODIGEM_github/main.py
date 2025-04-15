@@ -58,8 +58,7 @@ def run_training():
     beta = 0.0001  # hyperparater to tune #Beta = 0.0001 is best so far
 
     lr = 1e-3  # learning rate
-    #num_epochs = 100  # max. number of epochs
-    num_epochs = 1  # max. number of epochs
+    num_epochs = 100  # max. number of epochs
     max_patience = 10  # an early stopping is used, if training doesn't improve for longer than 10 epochs, it is stopped
     patience = 0
     nll_val_list = []

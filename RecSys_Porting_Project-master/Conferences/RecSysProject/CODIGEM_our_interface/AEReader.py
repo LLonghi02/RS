@@ -79,7 +79,7 @@ class AEReader(object):
             # TODO select the data splitting that you need, almost certainly there already is a function that does the splitting
             # Split the data in train, validation and test
             URM_train, URM_test = split_train_in_two_percentage_global_sample(URM_all, train_percentage = 0.8)
-            URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train, train_percentage = 0.8)
+            URM_validation, URM_test  = split_train_in_two_percentage_global_sample(URM_test, train_percentage = 0.5)
 
 
             # TODO get the sparse matrices in the correct dictionary with the correct name

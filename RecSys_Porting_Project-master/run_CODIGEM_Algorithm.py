@@ -66,9 +66,8 @@ def read_data_split_and_search(dataset_name,
     if not os.path.exists(result_folder_path):
         os.makedirs(result_folder_path)
 
-    # TODO Replace metric to optimize and cutoffs
-    metric_to_optimize = 'NDCG'
-    cutoff_to_optimize = 10
+    metric_to_optimize = 'RECALL'
+    cutoff_to_optimize = 50
 
     # All cutoffs that will be evaluated are listed here
     cutoff_list = [5, 10, 20, 30, 40, 50, 100]
@@ -78,7 +77,6 @@ def read_data_split_and_search(dataset_name,
     n_processes = 3
     resume_from_saved = True
 
-    # TODO Select the evaluation protocol
     # evaluator_validation = EvaluatorNegativeItemSample(URM_validation, URM_test_negative, cutoff_list=cutoff_list_validation)
     # evaluator_test = EvaluatorNegativeItemSample(URM_test, URM_test_negative, cutoff_list=cutoff_list_test)
     evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=cutoff_list)
@@ -96,20 +94,16 @@ def read_data_split_and_search(dataset_name,
             article_hyperparameters = {
                 "batch_size": 200,
                 "epochs": 100,
-                #"epochs": 1,
-
-                "learning_rate_embeddings": 0.001,
-                "learning_rate_CNN": 0.001,
-
-                "epoch_verbose": 1,
-                "beta_t": 0.0001,
+                "M":200,
+                "lr": 0.001,
+                "beta": 0.0001,
                 "T": 3
             }
 
             # Do not modify earlystopping
-            earlystopping_hyperparameters = {"validation_every_n": 5,
+            earlystopping_hyperparameters = {"validation_every_n": 1,
                                              "stop_on_validation": True,
-                                             "lower_validations_allowed": 5,
+                                             "lower_validations_allowed": 10,
                                              "evaluator_object": evaluator_validation,
                                              "validation_metric": metric_to_optimize,
                                              }
@@ -291,7 +285,7 @@ if __name__ == '__main__':
     KNN_similarity_to_report_list = ["cosine"]  # , "dice", "jaccard", "asymmetric", "tversky"]
 
     # TODO: Replace with dataset names, for a runnable example of this pipeline use only movielens20m
-    dataset_list = ["ml1m","ml20m","AE"]
+    dataset_list = ["AE","ml1m","ml20m"]
 
     for dataset_name in dataset_list:
         read_data_split_and_search(dataset_name,
