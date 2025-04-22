@@ -1,0 +1,11 @@
+Team Member 1:
+- Lara
+- Longhi
+- 11098675
+- lara.longhi@mail.polimi.it
+
+Team Member 2:
+- Michele
+- Balena
+- 10832184
+- michele.balena@mail.polimi.it
